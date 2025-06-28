@@ -4,7 +4,6 @@ import { useState, useMemo } from 'react'
 import { SynchroData } from '../lib/supabase'
 import { 
   MagnifyingGlassIcon, 
-  AdjustmentsHorizontalIcon,
   CalendarIcon,
   ArrowUpIcon,
   ArrowDownIcon,

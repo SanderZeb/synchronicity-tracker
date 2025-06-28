@@ -6,7 +6,6 @@ import {
   HeartIcon,
   MoonIcon,
   SunIcon,
-  ChartBarIcon,
   CalendarIcon,
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
