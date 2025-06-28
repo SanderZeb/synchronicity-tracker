@@ -58,26 +58,28 @@ export default function Dashboard() {
       a.click()
       URL.revokeObjectURL(url)
     } else if (format === 'csv') {
-      if (data.length === 0) return
-      
-      const headers = Object.keys(data[0]).join(',')
+      // Safely access the first element for headers
+      const [first] = data;
+      if (!first) return; // Exit if data is empty
+
+      const headers = Object.keys(first).join(',');
       const rows = data.map(row => 
         Object.values(row).map(value => 
           typeof value === 'string' ? `"${value}"` : value || ''
         ).join(',')
-      )
-      const csvContent = [headers, ...rows].join('\n')
+      );
+      const csvContent = [headers, ...rows].join('\n');
       
-      const blob = new Blob([csvContent], { type: 'text/csv' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `synchronicity-data-${new Date().toISOString().split('T')[0]}.csv`
-      a.click()
-      URL.revokeObjectURL(url)
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `synchronicity-data-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
     }
-    setShowExportModal(false)
-  }
+    setShowExportModal(false);
+  };
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: HomeIcon },
