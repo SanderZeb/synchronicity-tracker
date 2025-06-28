@@ -1,26 +1,57 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    scroll-behavior: smooth;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .card {
+    @apply bg-white rounded-xl shadow-md p-6 border border-gray-100;
+  }
+  
+  .btn-primary {
+    @apply bg-cosmic-600 hover:bg-cosmic-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+  
+  .input-field {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cosmic-500 focus:border-transparent;
+  }
+  
+  .section-header {
+    @apply text-2xl font-bold text-gray-800 mb-6;
+  }
+  
+  .metric-card {
+    @apply card hover:shadow-lg transition-shadow duration-200;
+  }
+  
+  .nav-tab {
+    @apply px-4 py-2 font-medium rounded-lg transition-colors duration-200 cursor-pointer;
+  }
+  
+  .nav-tab-active {
+    @apply nav-tab bg-cosmic-100 text-cosmic-800 border-cosmic-200;
+  }
+  
+  .nav-tab-inactive {
+    @apply nav-tab text-gray-600 hover:text-gray-800 hover:bg-gray-100;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-cosmic-600 to-synchro-600 bg-clip-text text-transparent;
+  }
+  
+  .cosmic-border {
+    @apply border-2 border-transparent bg-gradient-to-r from-cosmic-500 to-synchro-500 bg-clip-border;
+  }
 }
