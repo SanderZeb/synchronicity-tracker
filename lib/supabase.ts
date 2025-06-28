@@ -20,18 +20,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 })
 
-// Types for our synchronicity data
+// Updated interface to match exact database schema
 export interface SynchroData {
   id?: number
-  weekCount?: number
-  unlocks?: number
-  date?: string
-  day_of_the_week?: string
-  year?: number
-  month?: number
-  day?: number
+  date?: string // timestamp with time zone
   
-  // Time-based synchronicity columns
+  // Time-based synchronicity columns (exact DB column names)
   '01:01'?: number
   '02:02'?: number
   '03:03'?: number
@@ -57,71 +51,119 @@ export interface SynchroData {
   '23:23'?: number
   '00:00'?: number
   
-  // Subjective measures
-  synchroSum?: number
-  subjectiveSynchro?: number
-  subjectiveMood?: number
+  // Main metrics (matching DB lowercase)
+  synchrosum?: number
+  subjectivesynchro?: number
+  subjectivemood?: number
   productivity?: number
-  subjectiveMisses?: number
+  unlocks?: number
   
   // Health metrics
-  heartrateDaily?: number
-  heartrateResting?: number
-  stepsPhone?: number
+  heartratedaily?: number
+  heartrateresting?: number
+  stepsphone?: number
   weight?: number
-  skinProblems?: number
+  skinproblems?: number
   
   // Sleep data
-  sleepPhone?: number
-  sleepBand?: number
-  sleepAvg?: number
-  sleepDifference?: number
+  sleepphone?: number
+  sleepband?: number
+  sleepavg?: number
+  sleepdifference?: number
   sleep_fallasleep_time?: number
-  sleepWakeupAvg?: number
-  sleepWakeupBand?: number
-  sleepWakeupPhone?: number
-  sleepWakeupQuality?: number
+  sleepwakeupavg?: number
+  sleepwakeupband?: number
+  sleepwakeupphone?: number
+  sleepwakeupquality?: number
+  sleep_faalasleep_time?: number // Additional field from DB
   
   // Mental states
-  stateHealth?: number
-  stateRelationship?: number
-  stateSelfesteem?: number
-  stateInteligence?: number
-  stateSocialSkill?: number
-  stateImmerse?: number
+  statehealth?: number
+  staterelationship?: number
+  stateselfesteem?: number
+  stateinteligence?: number
+  statesocialskill?: number
+  stateimmerse?: number
   stres?: number
   workload?: number
   
   // Substances
-  stimMg?: number
-  stimSum?: number
-  methylphenidateTabs?: number
-  methylphenidateMg?: number
+  stimmg?: number
+  stimsum?: number
+  methylphenidatetabs?: number
+  methylphenidatemg?: number
   alcohol?: number
   
   // Diet
-  dietKcal?: number
-  dietCarbs?: number
-  dietProtein?: number
-  dietFats?: number
+  dietkcal?: number
+  dietcarbs?: number
+  dietprotein?: number
+  dietfats?: number
   
   // Cosmic data
-  ageOfMoon?: number
-  earthSunDistance?: number
-  moonPhase?: string
+  ageofmoon?: number
+  earthsundistance?: number
+  moonphase?: number // Changed to number to match DB (double precision)
   
   // Other metrics
   void?: number
-  oCount?: number
-  oQuality?: number
-  missSum?: number
-  singleTrialMean?: number
-  singleTrialSum?: number
+  ocount?: number
+  oquality?: number
+  subjectivemisses?: number
+  misssum?: number
+  singletrialmean?: number
+  singletrialsum?: number
   luck?: number
+  weekcount?: number
+  day_of_the_week?: string
+}
+
+// Helper interface for display purposes with camelCase
+export interface SynchroDataDisplay {
+  id?: number
+  date?: string
+  dayOfWeek?: string
   
-  // Timestamps
-  created_at?: string
-  updated_at?: string
+  // Time slots
+  timeSlots?: Record<string, number>
+  
+  // Main metrics
+  synchroSum?: number
+  subjectiveSynchro?: number
+  subjectiveMood?: number
+  productivity?: number
+  
+  // Health
+  heartRateDaily?: number
+  heartRateResting?: number
+  stepsPhone?: number
+  weight?: number
+  
+  // Sleep
+  sleepAvg?: number
+  sleepQuality?: number
+  
+  // Mental states
+  stateHealth?: number
+  stateRelationship?: number
+  stateSelfEsteem?: number
+  stateIntelligence?: number
+  stateSocialSkill?: number
+  stateImmerse?: number
+  stress?: number
+  
+  // Substances
+  stimulants?: number
+  alcohol?: number
+  
+  // Diet
+  calories?: number
+  carbs?: number
+  protein?: number
+  fats?: number
+  
+  // Cosmic
+  moonPhase?: string
 }
 
 // Database response types
@@ -137,6 +179,105 @@ export interface QueryOptions {
   ascending?: boolean
   limit?: number
   offset?: number
+}
+
+// Helper function to convert DB data to display format
+export const convertToDisplay = (data: SynchroData): SynchroDataDisplay => {
+  const timeSlots: Record<string, number> = {}
+  const timeCols = [
+    '00:00', '01:01', '02:02', '03:03', '04:04', '05:05', '06:06', 
+    '07:07', '08:08', '09:09', '10:10', '11:11', '12:12',
+    '13:13', '14:14', '15:15', '16:16', '17:17', '18:18',
+    '19:19', '20:20', '21:21', '22:22', '23:23'
+  ]
+  
+  timeCols.forEach(time => {
+    const value = data[time as keyof SynchroData] as number
+    if (value !== undefined) timeSlots[time] = value
+  })
+
+  // Convert moonphase number to string
+  const getMoonPhaseString = (phase?: number): string => {
+    if (!phase) return ''
+    const phases = [
+      'New Moon', 'Waxing Crescent', 'First Quarter', 'Waxing Gibbous',
+      'Full Moon', 'Waning Gibbous', 'Last Quarter', 'Waning Crescent'
+    ]
+    const index = Math.floor((phase / 360) * 8) % 8
+    return phases[index] || ''
+  }
+
+  return {
+    id: data.id,
+    date: data.date,
+    dayOfWeek: data.day_of_the_week,
+    timeSlots,
+    synchroSum: data.synchrosum,
+    subjectiveSynchro: data.subjectivesynchro,
+    subjectiveMood: data.subjectivemood,
+    productivity: data.productivity,
+    heartRateDaily: data.heartratedaily,
+    heartRateResting: data.heartrateresting,
+    stepsPhone: data.stepsphone,
+    weight: data.weight,
+    sleepAvg: data.sleepavg,
+    sleepQuality: data.sleepwakeupquality,
+    stateHealth: data.statehealth,
+    stateRelationship: data.staterelationship,
+    stateSelfEsteem: data.stateselfesteem,
+    stateIntelligence: data.stateinteligence,
+    stateSocialSkill: data.statesocialskill,
+    stateImmerse: data.stateimmerse,
+    stress: data.stres,
+    stimulants: data.stimmg,
+    alcohol: data.alcohol,
+    calories: data.dietkcal,
+    carbs: data.dietcarbs,
+    protein: data.dietprotein,
+    fats: data.dietfats,
+    moonPhase: getMoonPhaseString(data.moonphase)
+  }
+}
+
+// Helper function to convert display format back to DB format
+export const convertFromDisplay = (data: SynchroDataDisplay): Partial<SynchroData> => {
+  const dbData: Partial<SynchroData> = {
+    id: data.id,
+    date: data.date,
+    day_of_the_week: data.dayOfWeek,
+    synchrosum: data.synchroSum,
+    subjectivesynchro: data.subjectiveSynchro,
+    subjectivemood: data.subjectiveMood,
+    productivity: data.productivity,
+    heartratedaily: data.heartRateDaily,
+    heartrateresting: data.heartRateResting,
+    stepsphone: data.stepsPhone,
+    weight: data.weight,
+    sleepavg: data.sleepAvg,
+    sleepwakeupquality: data.sleepQuality,
+    statehealth: data.stateHealth,
+    staterelationship: data.stateRelationship,
+    stateselfesteem: data.stateSelfEsteem,
+    stateinteligence: data.stateIntelligence,
+    statesocialskill: data.stateSocialSkill,
+    stateimmerse: data.stateImmerse,
+    stres: data.stress,
+    stimmg: data.stimulants,
+    alcohol: data.alcohol,
+    dietkcal: data.calories,
+    dietcarbs: data.carbs,
+    dietprotein: data.protein,
+    dietfats: data.fats
+  }
+
+  // Add time slots
+  if (data.timeSlots) {
+    Object.entries(data.timeSlots).forEach(([time, value]) => {
+      dbData[time as keyof SynchroData] = value
+    })
+  }
+
+  return dbData
 }
 
 // Helper function to handle database errors
@@ -284,7 +425,7 @@ export const insertSynchroData = async (data: Partial<SynchroData>): Promise<Syn
       throw new DatabaseError('An entry for this date already exists')
     }
 
-    // Calculate synchroSum if time slots are provided
+    // Calculate synchrosum if time slots are provided
     const timeSlots = [
       '00:00', '01:01', '02:02', '03:03', '04:04', '05:05', '06:06', 
       '07:07', '08:08', '09:09', '10:10', '11:11', '12:12',
@@ -292,15 +433,13 @@ export const insertSynchroData = async (data: Partial<SynchroData>): Promise<Syn
       '19:19', '20:20', '21:21', '22:22', '23:23'
     ]
     
-    const synchroSum = timeSlots.reduce((sum, time) => {
+    const synchrosum = timeSlots.reduce((sum, time) => {
       return sum + (data[time as keyof SynchroData] as number || 0)
     }, 0)
 
     const dataToInsert = {
       ...data,
-      synchroSum,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      synchrosum
     }
 
     const { data: result, error } = await supabase
@@ -327,7 +466,7 @@ export const insertSynchroData = async (data: Partial<SynchroData>): Promise<Syn
  */
 export const updateSynchroData = async (id: number, data: Partial<SynchroData>): Promise<SynchroData> => {
   try {
-    // Calculate synchroSum if time slots are updated
+    // Calculate synchrosum if time slots are updated
     const timeSlots = [
       '00:00', '01:01', '02:02', '03:03', '04:04', '05:05', '06:06', 
       '07:07', '08:08', '09:09', '10:10', '11:11', '12:12',
@@ -340,18 +479,16 @@ export const updateSynchroData = async (id: number, data: Partial<SynchroData>):
     let dataToUpdate = { ...data }
     
     if (hasTimeSlotData) {
-      // Fetch current data to calculate new synchroSum
+      // Fetch current data to calculate new synchrosum
       const currentData = await fetchDataById(id)
       if (currentData) {
         const mergedData = { ...currentData, ...data }
-        const synchroSum = timeSlots.reduce((sum, time) => {
+        const synchrosum = timeSlots.reduce((sum, time) => {
           return sum + (mergedData[time as keyof SynchroData] as number || 0)
         }, 0)
-        dataToUpdate.synchroSum = synchroSum
+        dataToUpdate.synchrosum = synchrosum
       }
     }
-
-    dataToUpdate.updated_at = new Date().toISOString()
 
     const { data: result, error } = await supabase
       .from('synchrodata')
@@ -464,40 +601,6 @@ export const getDatabaseStats = async (): Promise<{
       throw error
     }
     handleDatabaseError(error, 'get database stats')
-  }
-}
-
-/**
- * Search data with text query
- */
-export const searchData = async (
-  query: string, 
-  options: QueryOptions = {}
-): Promise<SynchroData[]> => {
-  try {
-    const {
-      orderBy = 'date',
-      ascending = false,
-      limit = 50
-    } = options
-
-    const { data, error } = await supabase
-      .from('synchrodata')
-      .select('*')
-      .or(`date.ilike.%${query}%,day_of_the_week.ilike.%${query}%,moonPhase.ilike.%${query}%`)
-      .order(orderBy, { ascending })
-      .limit(limit)
-
-    if (error) {
-      handleDatabaseError(error, 'search data')
-    }
-
-    return data || []
-  } catch (error) {
-    if (error instanceof DatabaseError) {
-      throw error
-    }
-    handleDatabaseError(error, 'search data')
   }
 }
 

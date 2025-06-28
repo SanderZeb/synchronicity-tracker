@@ -10,10 +10,9 @@ import {
   ArrowDownIcon,
   FunnelIcon,
   EyeIcon,
-  TrashIcon,
-  PencilIcon,
-  ChartBarIcon,
-  SparklesIcon,
+  Squares2X2Icon,
+  ListBulletIcon,
+  BoltIcon,
   HeartIcon,
   MoonIcon
 } from '@heroicons/react/24/outline'
@@ -24,7 +23,7 @@ interface ViewSectionProps {
   onDataUpdate: () => void
 }
 
-type SortField = 'date' | 'subjectiveSynchro' | 'subjectiveMood' | 'productivity' | 'synchroSum' | 'sleepAvg'
+type SortField = 'date' | 'subjectivesynchro' | 'subjectivemood' | 'productivity' | 'synchrosum' | 'sleepavg'
 type SortDirection = 'asc' | 'desc'
 
 export default function ViewSection({ data }: ViewSectionProps) {
@@ -42,7 +41,7 @@ export default function ViewSection({ data }: ViewSectionProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(20)
   const [selectedEntries, setSelectedEntries] = useState<Set<number>>(new Set())
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table')
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards')
 
   // Filter and sort data
   const filteredAndSortedData = useMemo(() => {
@@ -58,8 +57,8 @@ export default function ViewSection({ data }: ViewSectionProps) {
 
     // Apply range filters
     filtered = filtered.filter(d => {
-      const synchro = d.subjectiveSynchro ?? 0
-      const mood = d.subjectiveMood ?? 0
+      const synchro = d.subjectivesynchro ?? 0
+      const mood = d.subjectivemood ?? 0
       return synchro >= rangeFilters.synchroMin && synchro <= rangeFilters.synchroMax &&
              mood >= rangeFilters.moodMin && mood <= rangeFilters.moodMax
     })
@@ -70,7 +69,6 @@ export default function ViewSection({ data }: ViewSectionProps) {
       filtered = filtered.filter(d => 
         d.date?.toLowerCase().includes(term) ||
         d.day_of_the_week?.toLowerCase().includes(term) ||
-        d.moonPhase?.toLowerCase().includes(term) ||
         d.id?.toString().includes(term)
       )
     }
@@ -150,19 +148,19 @@ export default function ViewSection({ data }: ViewSectionProps) {
     }
   }
 
-  const getIntensityColor = (value: number | undefined, max: number = 10) => {
-    if (!value) return 'bg-gray-100'
+  const getValueColor = (value: number | undefined, max: number = 10) => {
+    if (!value) return 'text-text-muted'
     const intensity = value / max
-    if (intensity >= 0.8) return 'bg-green-500'
-    if (intensity >= 0.6) return 'bg-green-400'
-    if (intensity >= 0.4) return 'bg-yellow-400'
-    if (intensity >= 0.2) return 'bg-orange-400'
-    return 'bg-red-400'
+    if (intensity >= 0.8) return 'text-green-600'
+    if (intensity >= 0.6) return 'text-green-500'
+    if (intensity >= 0.4) return 'text-yellow-600'
+    if (intensity >= 0.2) return 'text-orange-500'
+    return 'text-red-500'
   }
 
   const SortHeader = ({ field, children }: { field: SortField, children: React.ReactNode }) => (
     <th 
-      className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+      className="px-6 py-4 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-secondary transition-colors duration-200"
       onClick={() => handleSort(field)}
     >
       <div className="flex items-center space-x-1">
@@ -170,8 +168,8 @@ export default function ViewSection({ data }: ViewSectionProps) {
         {sortField === field && (
           <div className="flex flex-col">
             {sortDirection === 'asc' 
-              ? <ArrowUpIcon className="h-4 w-4 text-cosmic-600" />
-              : <ArrowDownIcon className="h-4 w-4 text-cosmic-600" />
+              ? <ArrowUpIcon className="h-4 w-4 text-primary-600" />
+              : <ArrowDownIcon className="h-4 w-4 text-primary-600" />
             }
           </div>
         )}
@@ -180,76 +178,68 @@ export default function ViewSection({ data }: ViewSectionProps) {
   )
 
   const EntryCard = ({ entry }: { entry: SynchroData }) => (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+    <div className="card-interactive group">
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
-            <CalendarIcon className="h-5 w-5 text-gray-400" />
-            <span className="font-semibold text-gray-900">{formatDate(entry.date)}</span>
+            <CalendarIcon className="h-5 w-5 text-text-muted" />
+            <span className="font-semibold text-text-primary">{formatDate(entry.date)}</span>
           </div>
           <div className="flex items-center space-x-2">
             <input
               type="checkbox"
               checked={selectedEntries.has(entry.id!)}
               onChange={() => toggleSelectEntry(entry.id!)}
-              className="rounded text-cosmic-600 focus:ring-cosmic-500"
+              className="rounded text-primary-600 focus:ring-primary-500"
             />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="text-center p-3 bg-cosmic-50 rounded-lg">
-            <SparklesIcon className="h-5 w-5 text-cosmic-600 mx-auto mb-1" />
-            <div className="text-lg font-bold text-cosmic-700">
-              {entry.subjectiveSynchro?.toFixed(1) || 'N/A'}
+          <div className="text-center p-3 bg-primary-50 rounded-lg">
+            <BoltIcon className="h-5 w-5 text-primary-600 mx-auto mb-1" />
+            <div className={`text-lg font-bold ${getValueColor(entry.subjectivesynchro)}`}>
+              {entry.subjectivesynchro?.toFixed(1) || 'N/A'}
             </div>
-            <div className="text-xs text-gray-500">Synchronicity</div>
+            <div className="text-xs text-text-muted">Synchronicity</div>
           </div>
           
           <div className="text-center p-3 bg-green-50 rounded-lg">
             <HeartIcon className="h-5 w-5 text-green-600 mx-auto mb-1" />
-            <div className="text-lg font-bold text-green-700">
-              {entry.subjectiveMood?.toFixed(1) || 'N/A'}
+            <div className={`text-lg font-bold ${getValueColor(entry.subjectivemood)}`}>
+              {entry.subjectivemood?.toFixed(1) || 'N/A'}
             </div>
-            <div className="text-xs text-gray-500">Mood</div>
+            <div className="text-xs text-text-muted">Mood</div>
           </div>
         </div>
 
-        <div className="flex justify-between items-center text-sm text-gray-600">
-          <span>Events: {entry.synchroSum || 0}</span>
-          <span>Sleep: {entry.sleepAvg?.toFixed(1) || 'N/A'}h</span>
+        <div className="flex justify-between items-center text-sm text-text-secondary">
+          <span className="badge badge-primary">Events: {entry.synchrosum || 0}</span>
+          <span>Sleep: {entry.sleepavg?.toFixed(1) || 'N/A'}h</span>
           <span>{entry.day_of_the_week || 'N/A'}</span>
         </div>
-
-        {entry.moonPhase && (
-          <div className="mt-3 text-xs text-gray-500 text-center">
-            🌙 {entry.moonPhase}
-          </div>
-        )}
       </div>
     </div>
   )
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="text-center">
-        <h2 className="text-3xl font-bold bg-gradient-to-r from-cosmic-600 to-synchro-600 bg-clip-text text-transparent mb-2">
-          Browse Data
-        </h2>
-        <p className="text-gray-600 text-lg">
+        <h2 className="section-header">Data Browser</h2>
+        <p className="text-text-secondary text-lg">
           Explore and analyze your synchronicity records
         </p>
       </div>
 
       {/* Enhanced Search and Filters */}
-      <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
+      <div className="card p-6">
         <div className="flex flex-col lg:flex-row gap-4 items-center">
           {/* Search */}
           <div className="flex-1 relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-text-muted" />
             <input
               type="text"
-              placeholder="Search by date, day, moon phase, or ID..."
+              placeholder="Search by date, day, or ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 input-field"
@@ -257,22 +247,22 @@ export default function ViewSection({ data }: ViewSectionProps) {
           </div>
 
           {/* View Mode Toggle */}
-          <div className="flex items-center space-x-2 bg-gray-100 p-1 rounded-lg">
-            <button
-              onClick={() => setViewMode('table')}
-              className={`p-2 rounded transition-colors ${
-                viewMode === 'table' ? 'bg-white shadow text-cosmic-600' : 'text-gray-500'
-              }`}
-            >
-              <ChartBarIcon className="h-4 w-4" />
-            </button>
+          <div className="flex items-center space-x-2 bg-surface-secondary p-1 rounded-lg">
             <button
               onClick={() => setViewMode('cards')}
               className={`p-2 rounded transition-colors ${
-                viewMode === 'cards' ? 'bg-white shadow text-cosmic-600' : 'text-gray-500'
+                viewMode === 'cards' ? 'bg-white shadow text-primary-600' : 'text-text-muted'
               }`}
             >
-              <EyeIcon className="h-4 w-4" />
+              <Squares2X2Icon className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('table')}
+              className={`p-2 rounded transition-colors ${
+                viewMode === 'table' ? 'bg-white shadow text-primary-600' : 'text-text-muted'
+              }`}
+            >
+              <ListBulletIcon className="h-4 w-4" />
             </button>
           </div>
 
@@ -281,8 +271,8 @@ export default function ViewSection({ data }: ViewSectionProps) {
             onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
               showFilters 
-                ? 'bg-gradient-to-r from-cosmic-500 to-synchro-500 text-white shadow-lg' 
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-gradient-primary text-white shadow-soft' 
+                : 'bg-surface-secondary text-text-secondary hover:text-text-primary hover:bg-white'
             }`}
           >
             <FunnelIcon className="h-5 w-5" />
@@ -292,11 +282,11 @@ export default function ViewSection({ data }: ViewSectionProps) {
 
         {/* Advanced Filters */}
         {showFilters && (
-          <div className="mt-6 pt-6 border-t border-gray-200 space-y-4">
+          <div className="mt-6 pt-6 border-t border-gray-200 space-y-4 fade-in">
             {/* Date Range */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Start Date</label>
+                <label className="block text-sm font-medium text-text-primary">Start Date</label>
                 <input
                   type="date"
                   value={dateFilter.start}
@@ -305,7 +295,7 @@ export default function ViewSection({ data }: ViewSectionProps) {
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">End Date</label>
+                <label className="block text-sm font-medium text-text-primary">End Date</label>
                 <input
                   type="date"
                   value={dateFilter.end}
@@ -318,7 +308,7 @@ export default function ViewSection({ data }: ViewSectionProps) {
             {/* Range Filters */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-text-primary">
                   Synchronicity Range: {rangeFilters.synchroMin} - {rangeFilters.synchroMax}
                 </label>
                 <div className="flex items-center space-x-3">
@@ -344,7 +334,7 @@ export default function ViewSection({ data }: ViewSectionProps) {
               </div>
               
               <div className="space-y-3">
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-text-primary">
                   Mood Range: {rangeFilters.moodMin} - {rangeFilters.moodMax}
                 </label>
                 <div className="flex items-center space-x-3">
@@ -384,7 +374,7 @@ export default function ViewSection({ data }: ViewSectionProps) {
               <select
                 value={itemsPerPage}
                 onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                className="px-3 py-1 border border-gray-300 rounded text-sm"
+                className="px-3 py-1 border border-gray-300 rounded text-sm input-field"
               >
                 <option value={10}>10 per page</option>
                 <option value={20}>20 per page</option>
@@ -398,13 +388,13 @@ export default function ViewSection({ data }: ViewSectionProps) {
         {/* Selection Actions */}
         {selectedEntries.size > 0 && (
           <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-text-secondary">
               {selectedEntries.size} entries selected
             </div>
             <div className="flex items-center space-x-2">
               <button
                 onClick={clearSelection}
-                className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+                className="btn-ghost text-sm"
               >
                 Clear Selection
               </button>
@@ -413,7 +403,7 @@ export default function ViewSection({ data }: ViewSectionProps) {
         )}
 
         {/* Results Summary */}
-        <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
+        <div className="mt-4 flex items-center justify-between text-sm text-text-secondary">
           <div>
             Showing {paginatedData.length} of {filteredAndSortedData.length} entries
             {filteredAndSortedData.length !== data.length && ` (filtered from ${data.length} total)`}
@@ -421,7 +411,7 @@ export default function ViewSection({ data }: ViewSectionProps) {
           {filteredAndSortedData.length > itemsPerPage && (
             <button
               onClick={selectAllVisible}
-              className="text-cosmic-600 hover:text-cosmic-700 font-medium"
+              className="text-primary-600 hover:text-primary-700 font-medium"
             >
               Select all visible
             </button>
@@ -431,80 +421,86 @@ export default function ViewSection({ data }: ViewSectionProps) {
 
       {/* Data Display */}
       {viewMode === 'table' ? (
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+        <div className="card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-surface-secondary">
                 <tr>
                   <th className="px-6 py-4 text-left">
                     <input
                       type="checkbox"
                       onChange={selectAllVisible}
-                      className="rounded text-cosmic-600 focus:ring-cosmic-500"
+                      className="rounded text-primary-600 focus:ring-primary-500"
                     />
                   </th>
                   <SortHeader field="date">Date</SortHeader>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                     Day
                   </th>
-                  <SortHeader field="subjectiveSynchro">Synchronicity</SortHeader>
-                  <SortHeader field="subjectiveMood">Mood</SortHeader>
+                  <SortHeader field="subjectivesynchro">Synchronicity</SortHeader>
+                  <SortHeader field="subjectivemood">Mood</SortHeader>
                   <SortHeader field="productivity">Productivity</SortHeader>
-                  <SortHeader field="synchroSum">Events</SortHeader>
-                  <SortHeader field="sleepAvg">Sleep</SortHeader>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Moon Phase
-                  </th>
+                  <SortHeader field="synchrosum">Events</SortHeader>
+                  <SortHeader field="sleepavg">Sleep</SortHeader>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {paginatedData.map((entry) => (
-                  <tr key={entry.id} className="hover:bg-gray-50 transition-colors duration-200">
+                  <tr key={entry.id} className="hover:bg-surface-secondary transition-colors duration-200">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <input
                         type="checkbox"
                         checked={selectedEntries.has(entry.id!)}
                         onChange={() => toggleSelectEntry(entry.id!)}
-                        className="rounded text-cosmic-600 focus:ring-cosmic-500"
+                        className="rounded text-primary-600 focus:ring-primary-500"
                       />
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
                       <div className="flex items-center space-x-2">
-                        <CalendarIcon className="h-4 w-4 text-gray-400" />
+                        <CalendarIcon className="h-4 w-4 text-text-muted" />
                         <span className="font-medium">{formatDate(entry.date)}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
                       {entry.day_of_the_week || 'N/A'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex items-center space-x-2">
-                        <div className={`w-3 h-3 rounded-full ${getIntensityColor(entry.subjectiveSynchro)}`} />
-                        <span className="font-medium">{entry.subjectiveSynchro?.toFixed(1) || 'N/A'}</span>
+                        <div className={`w-3 h-3 rounded-full ${
+                          (entry.subjectivesynchro || 0) >= 7 ? 'bg-green-500' :
+                          (entry.subjectivesynchro || 0) >= 5 ? 'bg-yellow-500' :
+                          'bg-red-500'
+                        }`} />
+                        <span className={`font-medium ${getValueColor(entry.subjectivesynchro)}`}>
+                          {entry.subjectivesynchro?.toFixed(1) || 'N/A'}
+                        </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex items-center space-x-2">
-                        <div className={`w-3 h-3 rounded-full ${getIntensityColor(entry.subjectiveMood)}`} />
-                        <span className="font-medium">{entry.subjectiveMood?.toFixed(1) || 'N/A'}</span>
+                        <div className={`w-3 h-3 rounded-full ${
+                          (entry.subjectivemood || 0) >= 7 ? 'bg-green-500' :
+                          (entry.subjectivemood || 0) >= 5 ? 'bg-yellow-500' :
+                          'bg-red-500'
+                        }`} />
+                        <span className={`font-medium ${getValueColor(entry.subjectivemood)}`}>
+                          {entry.subjectivemood?.toFixed(1) || 'N/A'}
+                        </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
                       {entry.productivity?.toFixed(1) || 'N/A'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
-                      <span className="px-2 py-1 bg-synchro-100 text-synchro-800 rounded-full text-xs">
-                        {entry.synchroSum || 0}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary font-semibold">
+                      <span className="badge badge-accent">
+                        {entry.synchrosum || 0}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
                       <div className="flex items-center space-x-1">
                         <MoonIcon className="h-4 w-4 text-purple-500" />
-                        <span>{entry.sleepAvg?.toFixed(1) || 'N/A'}h</span>
+                        <span>{entry.sleepavg?.toFixed(1) || 'N/A'}h</span>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {entry.moonPhase || 'N/A'}
                     </td>
                   </tr>
                 ))}
@@ -522,13 +518,13 @@ export default function ViewSection({ data }: ViewSectionProps) {
 
       {/* Enhanced Pagination */}
       {totalPages > 1 && (
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+        <div className="card p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-text-primary">
                 Page {currentPage} of {totalPages}
               </span>
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-text-muted">
                 ({filteredAndSortedData.length} total entries)
               </span>
             </div>
@@ -537,14 +533,14 @@ export default function ViewSection({ data }: ViewSectionProps) {
               <button
                 onClick={() => setCurrentPage(1)}
                 disabled={currentPage === 1}
-                className="px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+                className="px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-secondary transition-colors"
               >
                 First
               </button>
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+                className="px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-secondary transition-colors"
               >
                 Previous
               </button>
@@ -558,8 +554,8 @@ export default function ViewSection({ data }: ViewSectionProps) {
                     onClick={() => setCurrentPage(pageNum)}
                     className={`px-3 py-2 text-sm rounded-lg transition-colors ${
                       currentPage === pageNum
-                        ? 'bg-gradient-to-r from-cosmic-500 to-synchro-500 text-white'
-                        : 'bg-white border border-gray-300 hover:bg-gray-50'
+                        ? 'bg-gradient-primary text-white'
+                        : 'bg-white border border-gray-300 hover:bg-surface-secondary'
                     }`}
                   >
                     {pageNum}
@@ -570,14 +566,14 @@ export default function ViewSection({ data }: ViewSectionProps) {
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+                className="px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-secondary transition-colors"
               >
                 Next
               </button>
               <button
                 onClick={() => setCurrentPage(totalPages)}
                 disabled={currentPage === totalPages}
-                className="px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+                className="px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-secondary transition-colors"
               >
                 Last
               </button>
@@ -588,15 +584,14 @@ export default function ViewSection({ data }: ViewSectionProps) {
 
       {paginatedData.length === 0 && (
         <div className="text-center py-20">
-          <div className="relative">
-            <MagnifyingGlassIcon className="h-24 w-24 text-gray-300 mx-auto mb-6" />
-            <div className="absolute inset-0 h-24 w-24 text-cosmic-200 mx-auto animate-pulse">
-              <MagnifyingGlassIcon className="h-24 w-24" />
+          <div className="relative mb-8">
+            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+              <EyeIcon className="h-12 w-12 text-text-muted" />
             </div>
           </div>
           <div className="space-y-3">
-            <h3 className="text-2xl font-semibold text-gray-600">No entries found</h3>
-            <p className="text-gray-500 text-lg max-w-md mx-auto">
+            <h3 className="text-2xl font-semibold text-text-secondary">No entries found</h3>
+            <p className="text-text-muted text-lg max-w-md mx-auto">
               Try adjusting your search or filter criteria to find matching entries.
             </p>
           </div>

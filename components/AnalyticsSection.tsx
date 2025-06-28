@@ -19,6 +19,14 @@ import {
   ScatterChart
 } from 'recharts'
 import { format, parseISO } from 'date-fns'
+import { 
+  ChartBarIcon,
+  FireIcon,
+  HeartIcon,
+  BoltIcon,
+  ClockIcon,
+  ArrowTrendingUpIcon
+} from '@heroicons/react/24/outline'
 
 interface AnalyticsSectionProps {
   data: SynchroData[]
@@ -30,14 +38,14 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
   // Process data for timeline chart
   const prepareTimelineData = () => {
     return data
-      .filter(d => d.date && d.subjectiveSynchro != null)
+      .filter(d => d.date && d.subjectivesynchro != null)
       .sort((a, b) => new Date(a.date!).getTime() - new Date(b.date!).getTime())
       .map(d => ({
         date: d.date!,
-        synchronicity: d.subjectiveSynchro || 0,
-        mood: d.subjectiveMood || 0,
+        synchronicity: d.subjectivesynchro || 0,
+        mood: d.subjectivemood || 0,
         productivity: d.productivity || 0,
-        sleep: d.sleepAvg || 0
+        sleep: d.sleepavg || 0
       }))
   }
 
@@ -90,9 +98,9 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
     return moodRanges.map(range => ({
       ...range,
       count: data.filter(d => 
-        d.subjectiveMood != null && 
-        d.subjectiveMood >= range.min && 
-        d.subjectiveMood < range.max
+        d.subjectivemood != null && 
+        d.subjectivemood >= range.min && 
+        d.subjectivemood < range.max
       ).length
     }))
   }
@@ -100,12 +108,12 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
   // Process correlation data
   const prepareCorrelationData = () => {
     return data
-      .filter(d => d.subjectiveSynchro != null && d.subjectiveMood != null)
+      .filter(d => d.subjectivesynchro != null && d.subjectivemood != null)
       .map(d => ({
-        synchronicity: d.subjectiveSynchro || 0,
-        mood: d.subjectiveMood || 0,
+        synchronicity: d.subjectivesynchro || 0,
+        mood: d.subjectivemood || 0,
         productivity: d.productivity || 0,
-        sleep: d.sleepAvg || 0,
+        sleep: d.sleepavg || 0,
         date: d.date
       }))
   }
@@ -116,10 +124,10 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
   const correlationData = prepareCorrelationData()
 
   const chartOptions = [
-    { id: 'heatmap', label: 'Synchro Heatmap', description: 'Visual pattern of synchronicity times', icon: '🔥' },
-    { id: 'timeline', label: 'Timeline Trends', description: 'Track metrics over time', icon: '📈' },
-    { id: 'mood', label: 'Mood Distribution', description: 'Your mood patterns', icon: '😊' },
-    { id: 'correlations', label: 'Correlations', description: 'Relationship between metrics', icon: '🔗' }
+    { id: 'heatmap', label: 'Synchronicity Heatmap', description: 'Visual pattern of synchronicity times', icon: FireIcon },
+    { id: 'timeline', label: 'Timeline Trends', description: 'Track metrics over time', icon: ChartBarIcon },
+    { id: 'mood', label: 'Mood Distribution', description: 'Your mood patterns', icon: HeartIcon },
+    { id: 'correlations', label: 'Correlations', description: 'Relationship between metrics', icon: ArrowTrendingUpIcon }
   ]
 
   const formatDate = (dateStr: string) => {
@@ -131,12 +139,12 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
   }
 
   const getHeatmapColor = (intensity: number) => {
-    if (intensity === 0) return '#f3f4f6'
-    if (intensity < 0.2) return '#ddd6fe'
-    if (intensity < 0.4) return '#c4b5fd'
-    if (intensity < 0.6) return '#a78bfa'
-    if (intensity < 0.8) return '#8b5cf6'
-    return '#7c3aed'
+    if (intensity === 0) return '#f8fafc'
+    if (intensity < 0.2) return '#deeffe'
+    if (intensity < 0.4) return '#b4e2fd'
+    if (intensity < 0.6) return '#7bd0fc'
+    if (intensity < 0.8) return '#3bb9f8'
+    return '#3399e6'
   }
 
   // Synchronicity Heatmap Component
@@ -147,66 +155,63 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
     return (
       <div className="flex flex-col items-center space-y-6">
         <div className="text-center">
-          <h3 className="text-lg font-semibold mb-2">Synchronicity Time Heatmap</h3>
-          <p className="text-sm text-gray-600">Darker colors indicate more synchronicity events</p>
+          <h3 className="section-subheader">Synchronicity Time Heatmap</h3>
+          <p className="text-sm text-text-secondary">Darker colors indicate more synchronicity events</p>
         </div>
         
         {/* Time labels */}
-        <div className="flex items-center space-x-2 text-xs text-gray-500 ml-12">
-          {timeColumns.map((time, index) => (
-            <div 
-              key={time} 
-              className="w-8 text-center"
-              style={{ 
-                marginLeft: index === 0 ? 0 : gap,
-                transform: 'rotate(-45deg)',
-                transformOrigin: 'center'
-              }}
-            >
-              {time}
-            </div>
-          ))}
-        </div>
+        <div className="overflow-x-auto w-full">
+          <div className="flex items-center space-x-2 text-xs text-text-muted ml-12 min-w-max">
+            {timeColumns.map((time, index) => (
+              <div 
+                key={time} 
+                className="w-8 text-center"
+                style={{ 
+                  marginLeft: index === 0 ? 0 : gap,
+                  transform: 'rotate(-45deg)',
+                  transformOrigin: 'center'
+                }}
+              >
+                {time}
+              </div>
+            ))}
+          </div>
 
-        {/* Heatmap grid */}
-        <div className="flex flex-col space-y-1">
-          {[0, 1, 2, 3, 4, 5, 6].map(row => (
-            <div key={row} className="flex items-center space-x-1">
-              <div className="w-10 text-xs text-gray-500 text-right pr-2">
-                Week {row + 1}
+          {/* Heatmap grid */}
+          <div className="flex flex-col space-y-1 mt-4">
+            {[0, 1, 2, 3, 4, 5, 6].map(row => (
+              <div key={row} className="flex items-center space-x-1">
+                <div className="w-10 text-xs text-text-muted text-right pr-2">
+                  Week {row + 1}
+                </div>
+                <div className="flex space-x-1">
+                  {timeColumns.map((time, col) => {
+                    const cellData = heatmapData.find(d => d.x === col && d.y === row)
+                    const intensity = cellData?.intensity || 0
+                    const value = cellData?.value || 0
+                    
+                    return (
+                      <div
+                        key={`${row}-${col}`}
+                        className="group relative cursor-pointer transition-all duration-200 hover:scale-110 hover:shadow-soft rounded tooltip"
+                        style={{
+                          width: cellSize,
+                          height: cellSize,
+                          backgroundColor: getHeatmapColor(intensity),
+                          border: '1px solid #e5e7eb'
+                        }}
+                        data-tooltip={`${time}: ${value} events`}
+                      />
+                    )
+                  })}
+                </div>
               </div>
-              <div className="flex space-x-1">
-                {timeColumns.map((time, col) => {
-                  const cellData = heatmapData.find(d => d.x === col && d.y === row)
-                  const intensity = cellData?.intensity || 0
-                  const value = cellData?.value || 0
-                  
-                  return (
-                    <div
-                      key={`${row}-${col}`}
-                      className="group relative cursor-pointer transition-all duration-200 hover:scale-110 hover:shadow-lg rounded"
-                      style={{
-                        width: cellSize,
-                        height: cellSize,
-                        backgroundColor: getHeatmapColor(intensity),
-                        border: '1px solid #e5e7eb'
-                      }}
-                      title={`${time}: ${value} events`}
-                    >
-                      {/* Tooltip */}
-                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                        {time}: {value} events
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         {/* Legend */}
-        <div className="flex items-center space-x-4 text-xs text-gray-600">
+        <div className="flex items-center space-x-4 text-xs text-text-secondary">
           <span>Less</span>
           <div className="flex space-x-1">
             {[0, 0.2, 0.4, 0.6, 0.8, 1].map(intensity => (
@@ -218,7 +223,7 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
             ))}
           </div>
           <span>More</span>
-          <span className="ml-4">Max: {maxValue} events</span>
+          <span className="ml-4 badge badge-primary">Max: {maxValue} events</span>
         </div>
       </div>
     )
@@ -227,62 +232,63 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <h2 className="text-3xl font-bold bg-gradient-to-r from-cosmic-600 to-synchro-600 bg-clip-text text-transparent mb-2">
-          Analytics Dashboard
-        </h2>
-        <p className="text-gray-600 text-lg">
+        <h2 className="section-header">Analytics Dashboard</h2>
+        <p className="text-text-secondary text-lg">
           Explore patterns and trends in your synchronicity data
         </p>
       </div>
 
       {/* Chart Selection */}
       <div className="flex flex-wrap justify-center gap-3">
-        {chartOptions.map(option => (
-          <button
-            key={option.id}
-            onClick={() => setSelectedChart(option.id as any)}
-            className={`group relative px-6 py-4 rounded-xl transition-all duration-300 transform hover:scale-105 ${
-              selectedChart === option.id
-                ? 'bg-gradient-to-r from-cosmic-500 to-synchro-500 text-white shadow-lg'
-                : 'bg-white text-gray-600 border border-gray-200 hover:border-cosmic-300 hover:shadow-md'
-            }`}
-          >
-            <div className="flex items-center space-x-3">
-              <span className="text-2xl">{option.icon}</span>
-              <div className="text-left">
-                <div className="font-semibold">{option.label}</div>
-                <div className={`text-sm ${selectedChart === option.id ? 'text-white/80' : 'text-gray-500'}`}>
-                  {option.description}
+        {chartOptions.map(option => {
+          const Icon = option.icon
+          return (
+            <button
+              key={option.id}
+              onClick={() => setSelectedChart(option.id as any)}
+              className={`group relative px-6 py-4 rounded-xl transition-all duration-200 ${
+                selectedChart === option.id
+                  ? 'bg-gradient-primary text-white shadow-soft'
+                  : 'bg-white text-text-secondary border border-gray-200 hover:border-primary-200 hover:shadow-soft'
+              }`}
+            >
+              <div className="flex items-center space-x-3">
+                <Icon className="h-6 w-6" />
+                <div className="text-left">
+                  <div className="font-semibold">{option.label}</div>
+                  <div className={`text-sm ${selectedChart === option.id ? 'text-white/80' : 'text-text-muted'}`}>
+                    {option.description}
+                  </div>
                 </div>
               </div>
-            </div>
-          </button>
-        ))}
+            </button>
+          )
+        })}
       </div>
 
       {/* Charts */}
-      <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+      <div className="chart-container">
         {selectedChart === 'heatmap' && <SynchroHeatmap />}
 
         {selectedChart === 'timeline' && (
           <div>
-            <h3 className="text-xl font-semibold mb-6 text-center">Timeline Trends</h3>
+            <h3 className="section-subheader text-center">Timeline Trends</h3>
             <div className="h-96">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={timelineData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f4f7" />
                   <XAxis 
                     dataKey="date" 
                     tickFormatter={formatDate}
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
+                    tick={{ fontSize: 12, fill: '#4a5568' }}
                   />
-                  <YAxis tick={{ fontSize: 12, fill: '#6b7280' }} />
+                  <YAxis tick={{ fontSize: 12, fill: '#4a5568' }} />
                   <Tooltip 
                     labelFormatter={(value) => formatDate(value as string)}
                     formatter={(value, name) => [Number(value).toFixed(1), name]}
                     contentStyle={{
                       backgroundColor: 'white',
-                      border: '1px solid #e5e7eb',
+                      border: '1px solid #e2e8f0',
                       borderRadius: '8px',
                       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                     }}
@@ -290,10 +296,10 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
                   <Line 
                     type="monotone" 
                     dataKey="synchronicity" 
-                    stroke="#0ea5e9" 
+                    stroke="#3399e6" 
                     strokeWidth={3}
                     name="Synchronicity"
-                    dot={{ fill: '#0ea5e9', strokeWidth: 2, r: 4 }}
+                    dot={{ fill: '#3399e6', strokeWidth: 2, r: 4 }}
                   />
                   <Line 
                     type="monotone" 
@@ -306,10 +312,10 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
                   <Line 
                     type="monotone" 
                     dataKey="productivity" 
-                    stroke="#f59e0b" 
+                    stroke="#339999" 
                     strokeWidth={3}
                     name="Productivity"
-                    dot={{ fill: '#f59e0b', strokeWidth: 2, r: 4 }}
+                    dot={{ fill: '#339999', strokeWidth: 2, r: 4 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -319,7 +325,7 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
 
         {selectedChart === 'mood' && (
           <div>
-            <h3 className="text-xl font-semibold mb-6 text-center">Mood Distribution</h3>
+            <h3 className="section-subheader text-center">Mood Distribution</h3>
             <div className="h-96 flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -341,7 +347,7 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
                     formatter={(value, name) => [value, 'Count']}
                     contentStyle={{
                       backgroundColor: 'white',
-                      border: '1px solid #e5e7eb',
+                      border: '1px solid #e2e8f0',
                       borderRadius: '8px',
                       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                     }}
@@ -354,34 +360,34 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
 
         {selectedChart === 'correlations' && (
           <div>
-            <h3 className="text-xl font-semibold mb-6 text-center">Synchronicity vs Mood Correlation</h3>
+            <h3 className="section-subheader text-center">Synchronicity vs Mood Correlation</h3>
             <div className="h-96">
               <ResponsiveContainer width="100%" height="100%">
                 <ScatterChart data={correlationData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f4f7" />
                   <XAxis 
                     type="number" 
                     dataKey="synchronicity" 
                     name="Synchronicity"
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
+                    tick={{ fontSize: 12, fill: '#4a5568' }}
                   />
                   <YAxis 
                     type="number" 
                     dataKey="mood" 
                     name="Mood"
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
+                    tick={{ fontSize: 12, fill: '#4a5568' }}
                   />
                   <Tooltip 
                     cursor={{ strokeDasharray: '3 3' }}
                     formatter={(value, name) => [Number(value).toFixed(1), name]}
                     contentStyle={{
                       backgroundColor: 'white',
-                      border: '1px solid #e5e7eb',
+                      border: '1px solid #e2e8f0',
                       borderRadius: '8px',
                       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                     }}
                   />
-                  <Scatter name="Synchro vs Mood" fill="#0ea5e9" />
+                  <Scatter name="Synchro vs Mood" fill="#3399e6" />
                 </ScatterChart>
               </ResponsiveContainer>
             </div>
@@ -392,26 +398,145 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
       {/* Enhanced Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {[
-          { label: 'Total Entries', value: data.length, icon: '📊', color: 'from-blue-500 to-blue-600' },
-          { label: 'Avg Synchronicity', value: timelineData.length > 0 ? (timelineData.reduce((sum, d) => sum + d.synchronicity, 0) / timelineData.length).toFixed(1) : '0', icon: '✨', color: 'from-cosmic-500 to-cosmic-600' },
-          { label: 'Peak Time', value: timeColumns.reduce((max, time) => {
-            const total = data.reduce((sum, d) => sum + (d[time as keyof SynchroData] as number || 0), 0)
-            const maxTotal = data.reduce((sum, d) => sum + (d[max as keyof SynchroData] as number || 0), 0)
-            return total > maxTotal ? time : max
-          }, '00:00'), icon: '⏰', color: 'from-synchro-500 to-synchro-600' },
-          { label: 'Tracking Days', value: timelineData.length > 0 ? Math.ceil((new Date(timelineData[timelineData.length - 1].date).getTime() - new Date(timelineData[0].date).getTime()) / (1000 * 60 * 60 * 24)) : 0, icon: '📅', color: 'from-green-500 to-green-600' }
+          { 
+            label: 'Total Entries', 
+            value: data.length, 
+            icon: ChartBarIcon, 
+            color: 'primary',
+            description: 'Total recorded days'
+          },
+          { 
+            label: 'Avg Synchronicity', 
+            value: timelineData.length > 0 ? (timelineData.reduce((sum, d) => sum + d.synchronicity, 0) / timelineData.length).toFixed(1) : '0', 
+            icon: BoltIcon, 
+            color: 'primary',
+            description: 'Average daily score'
+          },
+          { 
+            label: 'Peak Time', 
+            value: timeColumns.reduce((max, time) => {
+              const total = data.reduce((sum, d) => sum + (d[time as keyof SynchroData] as number || 0), 0)
+              const maxTotal = data.reduce((sum, d) => sum + (d[max as keyof SynchroData] as number || 0), 0)
+              return total > maxTotal ? time : max
+            }, '00:00'), 
+            icon: ClockIcon, 
+            color: 'accent',
+            description: 'Most active time'
+          },
+          { 
+            label: 'Tracking Days', 
+            value: timelineData.length > 0 ? Math.ceil((new Date(timelineData[timelineData.length - 1].date).getTime() - new Date(timelineData[0].date).getTime()) / (1000 * 60 * 60 * 24)) : 0, 
+            icon: ArrowTrendingUpIcon, 
+            color: 'success',
+            description: 'Days tracked'
+          }
         ].map((stat, index) => (
-          <div key={index} className="group relative bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-            <div className={`absolute inset-0 bg-gradient-to-r ${stat.color} opacity-0 group-hover:opacity-10 rounded-xl transition-opacity duration-300`} />
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">{stat.label}</p>
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+          <div key={index} className="metric-card group relative overflow-hidden">
+            <div className={`absolute inset-0 bg-gradient-to-r ${
+              stat.color === 'primary' ? 'from-primary-500 to-primary-600' :
+              stat.color === 'accent' ? 'from-accent-400 to-accent-500' :
+              'from-green-500 to-green-600'
+            } opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+            <div className="relative p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className={`p-3 rounded-xl bg-gradient-to-r ${
+                  stat.color === 'primary' ? 'from-primary-500 to-primary-600' :
+                  stat.color === 'accent' ? 'from-accent-400 to-accent-500' :
+                  'from-green-500 to-green-600'
+                } shadow-soft`}>
+                  <stat.icon className="h-6 w-6 text-white" />
+                </div>
               </div>
-              <div className="text-3xl">{stat.icon}</div>
+              <div className="space-y-2">
+                <p className="metric-label">{stat.label}</p>
+                <p className="metric-value">{stat.value}</p>
+                <p className="text-sm text-text-secondary">{stat.description}</p>
+              </div>
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Data Quality Indicators */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="card-hover p-6">
+          <h4 className="font-semibold text-text-primary mb-3">Data Completeness</h4>
+          <div className="space-y-3">
+            {[
+              { label: 'Synchronicity', field: 'subjectivesynchro' },
+              { label: 'Mood', field: 'subjectivemood' },
+              { label: 'Sleep', field: 'sleepavg' }
+            ].map(item => {
+              const completeness = data.length > 0 
+                ? (data.filter(d => d[item.field as keyof SynchroData] != null).length / data.length) * 100 
+                : 0
+              return (
+                <div key={item.label}>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-text-secondary">{item.label}</span>
+                    <span className="text-text-primary font-medium">{completeness.toFixed(0)}%</span>
+                  </div>
+                  <div className="progress-bar">
+                    <div 
+                      className="progress-fill" 
+                      style={{ width: `${completeness}%` }}
+                    />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="card-hover p-6">
+          <h4 className="font-semibold text-text-primary mb-3">Recent Activity</h4>
+          <div className="space-y-2">
+            {timelineData.slice(-5).map((entry, index) => (
+              <div key={index} className="flex justify-between items-center">
+                <span className="text-sm text-text-secondary">
+                  {formatDate(entry.date)}
+                </span>
+                <div className="flex items-center space-x-2">
+                  <div className={`status-dot ${
+                    entry.synchronicity >= 7 ? 'bg-green-500' :
+                    entry.synchronicity >= 5 ? 'bg-yellow-500' :
+                    'bg-red-500'
+                  }`} />
+                  <span className="text-sm font-medium text-text-primary">
+                    {entry.synchronicity.toFixed(1)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="card-hover p-6">
+          <h4 className="font-semibold text-text-primary mb-3">Trending Metrics</h4>
+          <div className="space-y-3">
+            {[
+              { label: 'Synchronicity', trend: 0.8, positive: true },
+              { label: 'Mood Stability', trend: 0.3, positive: true },
+              { label: 'Sleep Quality', trend: -0.2, positive: false }
+            ].map(metric => (
+              <div key={metric.label} className="flex justify-between items-center">
+                <span className="text-sm text-text-secondary">{metric.label}</span>
+                <div className={`flex items-center space-x-1 ${
+                  metric.positive ? 'metric-trend-positive' : 'metric-trend-negative'
+                }`}>
+                  {metric.positive ? (
+                    <ArrowTrendingUpIcon className="h-3 w-3" />
+                  ) : (
+                    <ArrowTrendingUpIcon className="h-3 w-3 transform rotate-180" />
+                  )}
+                  <span className="text-xs font-medium">
+                    {metric.positive ? '+' : ''}{metric.trend.toFixed(1)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )

@@ -2,7 +2,7 @@
 
 import { SynchroData } from '../lib/supabase'
 import {
-  SparklesIcon,
+  BoltIcon,
   HeartIcon,
   MoonIcon,
   SunIcon,
@@ -12,7 +12,8 @@ import {
   ArrowTrendingDownIcon,
   ClockIcon,
   FireIcon,
-  PlusIcon
+  PlusIcon,
+  CpuChipIcon
 } from '@heroicons/react/24/outline'
 import { LineChart, Line, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts'
 
@@ -25,20 +26,20 @@ export default function SummarySection({ data }: SummarySectionProps) {
   const calculateStats = () => {
     if (data.length === 0) return null
 
-    const validSynchro = data.filter(d => d.subjectiveSynchro != null)
-    const validMood = data.filter(d => d.subjectiveMood != null)
+    const validSynchro = data.filter(d => d.subjectivesynchro != null)
+    const validMood = data.filter(d => d.subjectivemood != null)
     const validProductivity = data.filter(d => d.productivity != null)
-    const validSleep = data.filter(d => d.sleepAvg != null)
+    const validSleep = data.filter(d => d.sleepavg != null)
 
     // Basic averages
     const avgSynchro = validSynchro.length > 0
-      ? validSynchro.reduce((sum, d) => sum + (d.subjectiveSynchro || 0), 0) / validSynchro.length
+      ? validSynchro.reduce((sum, d) => sum + (d.subjectivesynchro || 0), 0) / validSynchro.length
       : 0
 
-    const totalSynchroSum = data.reduce((sum, d) => sum + (d.synchroSum || 0), 0)
+    const totalSynchroSum = data.reduce((sum, d) => sum + (d.synchrosum || 0), 0)
 
     const avgMood = validMood.length > 0
-      ? validMood.reduce((sum, d) => sum + (d.subjectiveMood || 0), 0) / validMood.length
+      ? validMood.reduce((sum, d) => sum + (d.subjectivemood || 0), 0) / validMood.length
       : 0
 
     const avgProductivity = validProductivity.length > 0
@@ -46,7 +47,7 @@ export default function SummarySection({ data }: SummarySectionProps) {
       : 0
 
     const avgSleep = validSleep.length > 0
-      ? validSleep.reduce((sum, d) => sum + (d.sleepAvg || 0), 0) / validSleep.length
+      ? validSleep.reduce((sum, d) => sum + (d.sleepavg || 0), 0) / validSleep.length
       : 0
 
     // Trend analysis (last 7 days vs previous 7 days)
@@ -54,12 +55,12 @@ export default function SummarySection({ data }: SummarySectionProps) {
     const recent7 = sortedData.slice(0, 7)
     const previous7 = sortedData.slice(7, 14)
 
-    const recentAvgSynchro = recent7.filter(d => d.subjectiveSynchro != null).length > 0
-      ? recent7.filter(d => d.subjectiveSynchro != null).reduce((sum, d) => sum + (d.subjectiveSynchro || 0), 0) / recent7.filter(d => d.subjectiveSynchro != null).length
+    const recentAvgSynchro = recent7.filter(d => d.subjectivesynchro != null).length > 0
+      ? recent7.filter(d => d.subjectivesynchro != null).reduce((sum, d) => sum + (d.subjectivesynchro || 0), 0) / recent7.filter(d => d.subjectivesynchro != null).length
       : 0
 
-    const previousAvgSynchro = previous7.filter(d => d.subjectiveSynchro != null).length > 0
-      ? previous7.filter(d => d.subjectiveSynchro != null).reduce((sum, d) => sum + (d.subjectiveSynchro || 0), 0) / previous7.filter(d => d.subjectiveSynchro != null).length
+    const previousAvgSynchro = previous7.filter(d => d.subjectivesynchro != null).length > 0
+      ? previous7.filter(d => d.subjectivesynchro != null).reduce((sum, d) => sum + (d.subjectivesynchro || 0), 0) / previous7.filter(d => d.subjectivesynchro != null).length
       : 0
 
     const synchroTrend = recentAvgSynchro - previousAvgSynchro
@@ -82,13 +83,13 @@ export default function SummarySection({ data }: SummarySectionProps) {
       .slice(0, 5)
 
     // Best and worst days
-    const daysWithSynchro = data.filter(d => d.date && d.subjectiveSynchro != null)
+    const daysWithSynchro = data.filter(d => d.date && d.subjectivesynchro != null)
     const bestDay = daysWithSynchro.reduce((best, current) =>
-      (current.subjectiveSynchro || 0) > (best.subjectiveSynchro || 0) ? current : best
+      (current.subjectivesynchro || 0) > (best.subjectivesynchro || 0) ? current : best
     , daysWithSynchro[0])
 
     const worstDay = daysWithSynchro.reduce((worst, current) =>
-      (current.subjectiveSynchro || 0) < (worst.subjectiveSynchro || 0) ? current : worst
+      (current.subjectivesynchro || 0) < (worst.subjectivesynchro || 0) ? current : worst
     , daysWithSynchro[0])
 
     // Date range
@@ -99,8 +100,8 @@ export default function SummarySection({ data }: SummarySectionProps) {
     // Weekly pattern
     const weeklyData = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => {
       const dayData = data.filter(d => d.day_of_the_week === day)
-      const avgSynchroForDay = dayData.filter(d => d.subjectiveSynchro != null).length > 0
-        ? dayData.filter(d => d.subjectiveSynchro != null).reduce((sum, d) => sum + (d.subjectiveSynchro || 0), 0) / dayData.filter(d => d.subjectiveSynchro != null).length
+      const avgSynchroForDay = dayData.filter(d => d.subjectivesynchro != null).length > 0
+        ? dayData.filter(d => d.subjectivesynchro != null).reduce((sum, d) => sum + (d.subjectivesynchro || 0), 0) / dayData.filter(d => d.subjectivesynchro != null).length
         : 0
 
       return {
@@ -113,7 +114,7 @@ export default function SummarySection({ data }: SummarySectionProps) {
     // Recent timeline for mini chart
     const recentTimeline = sortedData.slice(0, 14).reverse().map(d => ({
       date: d.date?.slice(-2),
-      value: d.subjectiveSynchro || 0
+      value: d.subjectivesynchro || 0
     }))
 
     return {
@@ -138,7 +139,7 @@ export default function SummarySection({ data }: SummarySectionProps) {
   const calculateStreak = (sortedData: SynchroData[]) => {
     let streak = 0
     for (const entry of sortedData) {
-      if (entry.subjectiveSynchro && entry.subjectiveSynchro >= 5) {
+      if (entry.subjectivesynchro && entry.subjectivesynchro >= 5) {
         streak++
       } else {
         break
@@ -152,22 +153,21 @@ export default function SummarySection({ data }: SummarySectionProps) {
   if (!stats) {
     return (
       <div className="text-center py-20">
-        <div className="relative">
-          <SparklesIcon className="h-24 w-24 text-gray-300 mx-auto mb-6" />
-          <div className="absolute inset-0 h-24 w-24 text-cosmic-200 mx-auto animate-pulse">
-            <SparklesIcon className="h-24 w-24" />
+        <div className="relative mb-8">
+          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+            <CpuChipIcon className="h-12 w-12 text-text-muted" />
           </div>
         </div>
-        <div className="space-y-3">
-          <h3 className="text-2xl font-semibold text-gray-600">No synchronicity data yet</h3>
-          <p className="text-gray-500 text-lg max-w-md mx-auto">
-            Start your journey by adding your first entry. The universe is waiting to reveal its patterns.
+        <div className="space-y-4">
+          <h3 className="text-2xl font-semibold text-text-primary">No data yet</h3>
+          <p className="text-text-secondary text-lg max-w-md mx-auto">
+            Start tracking your synchronicity patterns by adding your first entry.
           </p>
-          <div className="mt-6">
-            <div className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-cosmic-500 to-synchro-500 text-white rounded-lg font-medium">
-              <PlusIcon className="h-5 w-5" />
-              <span>Add Your First Entry</span>
-            </div>
+          <div className="mt-8">
+            <button className="btn-primary">
+              <PlusIcon className="h-5 w-5 mr-2" />
+              Add Your First Entry
+            </button>
           </div>
         </div>
       </div>
@@ -179,7 +179,7 @@ export default function SummarySection({ data }: SummarySectionProps) {
     value,
     subtitle,
     icon: Icon,
-    color = 'cosmic',
+    color = 'primary',
     trend,
     miniChart
   }: {
@@ -187,31 +187,29 @@ export default function SummarySection({ data }: SummarySectionProps) {
     value: string | number
     subtitle?: string
     icon: React.ComponentType<any>
-    color?: 'cosmic' | 'synchro' | 'green' | 'blue' | 'purple' | 'orange'
+    color?: 'primary' | 'accent' | 'success' | 'warning'
     trend?: number
     miniChart?: any[]
   }) => {
     const colorClasses = {
-      cosmic: 'from-cosmic-500 to-cosmic-600',
-      synchro: 'from-synchro-500 to-synchro-600',
-      green: 'from-green-500 to-green-600',
-      blue: 'from-blue-500 to-blue-600',
-      purple: 'from-purple-500 to-purple-600',
-      orange: 'from-orange-500 to-orange-600'
+      primary: 'from-primary-500 to-primary-600',
+      accent: 'from-accent-400 to-accent-500',
+      success: 'from-green-500 to-green-600',
+      warning: 'from-orange-500 to-orange-600'
     }
 
     return (
-      <div className="group relative bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden">
+      <div className="metric-card group relative overflow-hidden">
         <div className={`absolute inset-0 bg-gradient-to-r ${colorClasses[color]} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
 
         <div className="relative p-6">
           <div className="flex items-start justify-between mb-4">
-            <div className={`p-3 rounded-xl bg-gradient-to-r ${colorClasses[color]} shadow-lg`}>
+            <div className={`p-3 rounded-xl bg-gradient-to-r ${colorClasses[color]} shadow-soft`}>
               <Icon className="h-6 w-6 text-white" />
             </div>
             {trend !== undefined && (
               <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
-                trend > 0 ? 'bg-green-100 text-green-700' : trend < 0 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
+                trend > 0 ? 'metric-trend-positive' : trend < 0 ? 'metric-trend-negative' : 'metric-trend-neutral'
               }`}>
                 {trend > 0 ? (
                   <ArrowTrendingUpIcon className="h-3 w-3" />
@@ -224,9 +222,9 @@ export default function SummarySection({ data }: SummarySectionProps) {
           </div>
 
           <div className="space-y-2">
-            <h3 className="font-semibold text-gray-700 text-sm">{title}</h3>
-            <p className="text-3xl font-bold text-gray-900">{value}</p>
-            {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
+            <h3 className="metric-label">{title}</h3>
+            <p className="metric-value">{value}</p>
+            {subtitle && <p className="text-sm text-text-secondary">{subtitle}</p>}
           </div>
 
           {miniChart && (
@@ -236,10 +234,9 @@ export default function SummarySection({ data }: SummarySectionProps) {
                   <Line
                     type="monotone"
                     dataKey="value"
-                    stroke="currentColor"
+                    stroke="#3399e6"
                     strokeWidth={2}
                     dot={false}
-                    className="text-cosmic-500"
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -255,7 +252,7 @@ export default function SummarySection({ data }: SummarySectionProps) {
     title,
     description,
     highlight,
-    color = 'cosmic'
+    color = 'primary'
   }: {
     icon: React.ComponentType<any>
     title: string
@@ -263,14 +260,14 @@ export default function SummarySection({ data }: SummarySectionProps) {
     highlight?: string
     color?: string
   }) => (
-    <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
+    <div className="card-hover p-6">
       <div className="flex items-start space-x-4">
         <div className={`p-2 rounded-lg bg-${color}-100`}>
           <Icon className={`h-6 w-6 text-${color}-600`} />
         </div>
         <div className="flex-1">
-          <h4 className="font-semibold text-gray-800 mb-1">{title}</h4>
-          <p className="text-gray-600 text-sm leading-relaxed">{description}</p>
+          <h4 className="font-semibold text-text-primary mb-1">{title}</h4>
+          <p className="text-text-secondary text-sm leading-relaxed">{description}</p>
           {highlight && (
             <p className={`text-${color}-600 font-medium text-sm mt-2`}>{highlight}</p>
           )}
@@ -283,16 +280,14 @@ export default function SummarySection({ data }: SummarySectionProps) {
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center space-y-4">
-        <h2 className="text-3xl font-bold bg-gradient-to-r from-cosmic-600 to-synchro-600 bg-clip-text text-transparent">
-          Summary Overview
-        </h2>
-        <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-          Your synchronicity journey insights and patterns from the cosmic database
+        <h2 className="section-header">Dashboard Overview</h2>
+        <p className="text-text-secondary text-lg max-w-2xl mx-auto">
+          Your synchronicity journey insights and patterns
         </p>
       </div>
 
       {/* Tracking Period Banner */}
-      <div className="relative bg-gradient-to-r from-cosmic-500 to-synchro-500 rounded-2xl p-8 text-white overflow-hidden">
+      <div className="relative bg-gradient-primary rounded-2xl p-8 text-white overflow-hidden">
         <div className="absolute inset-0 bg-black/10" />
         <div className="relative text-center space-y-3">
           <CalendarIcon className="h-10 w-10 mx-auto opacity-90" />
@@ -301,7 +296,7 @@ export default function SummarySection({ data }: SummarySectionProps) {
             {stats.startDate?.toLocaleDateString()} — {stats.endDate?.toLocaleDateString()}
           </div>
           <div className="text-white/80">
-            {stats.totalDays} days of cosmic consciousness tracking
+            {stats.totalDays} days of tracking
           </div>
         </div>
       </div>
@@ -311,9 +306,9 @@ export default function SummarySection({ data }: SummarySectionProps) {
         <MetricCard
           title="Average Synchronicity"
           value={stats.avgSynchro.toFixed(1)}
-          subtitle="Subjective rating (0-10)"
-          icon={SparklesIcon}
-          color="cosmic"
+          subtitle="Daily rating (0-10)"
+          icon={BoltIcon}
+          color="primary"
           trend={stats.synchroTrend}
           miniChart={stats.recentTimeline}
         />
@@ -322,21 +317,21 @@ export default function SummarySection({ data }: SummarySectionProps) {
           value={stats.totalSynchroSum}
           subtitle="Recorded synchronicities"
           icon={FireIcon}
-          color="synchro"
+          color="accent"
         />
         <MetricCard
           title="Average Mood"
           value={stats.avgMood.toFixed(1)}
           subtitle="Daily mood rating"
           icon={HeartIcon}
-          color="green"
+          color="success"
         />
         <MetricCard
           title="Sleep Quality"
           value={`${stats.avgSleep.toFixed(1)}h`}
           subtitle="Average sleep duration"
           icon={MoonIcon}
-          color="purple"
+          color="warning"
         />
       </div>
 
@@ -347,64 +342,64 @@ export default function SummarySection({ data }: SummarySectionProps) {
           value={stats.avgProductivity.toFixed(1)}
           subtitle="Daily productivity rating"
           icon={SunIcon}
-          color="orange"
+          color="warning"
         />
         <MetricCard
           title="Active Streak"
           value={`${stats.streakDays} days`}
           subtitle="Consecutive high-sync days"
           icon={ArrowTrendingUpIcon}
-          color="green"
+          color="success"
         />
         <MetricCard
           title="Peak Time"
           value={stats.topTimes[0]?.time || 'N/A'}
           subtitle="Most active sync time"
           icon={ClockIcon}
-          color="blue"
+          color="primary"
         />
       </div>
 
       {/* Weekly Pattern */}
-      <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-        <h3 className="text-xl font-semibold text-gray-800 mb-6 text-center">Weekly Synchronicity Pattern</h3>
+      <div className="chart-container">
+        <h3 className="section-subheader text-center">Weekly Synchronicity Pattern</h3>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={stats.weeklyData}>
-              <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} />
+              <XAxis dataKey="day" tick={{ fontSize: 12, fill: '#4a5568' }} />
+              <YAxis tick={{ fontSize: 12, fill: '#4a5568' }} />
               <Tooltip
                 formatter={(value) => [Number(value).toFixed(1), 'Avg Synchronicity']}
                 contentStyle={{
                   backgroundColor: 'white',
-                  border: '1px solid #e5e7eb',
+                  border: '1px solid #e2e8f0',
                   borderRadius: '8px',
                   boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                 }}
               />
-              <Bar dataKey="synchronicity" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="synchronicity" fill="#3399e6" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
       {/* Top Synchronicity Times */}
-      <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-        <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center space-x-2">
-          <ClockIcon className="h-6 w-6 text-cosmic-600" />
+      <div className="chart-container">
+        <h3 className="section-subheader flex items-center space-x-2">
+          <ClockIcon className="h-6 w-6 text-primary-600" />
           <span>Most Active Synchronicity Times</span>
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {stats.topTimes.map((timeData, index) => (
             <div key={timeData.time} className="relative group">
-              <div className="text-center p-4 bg-gradient-to-br from-cosmic-50 to-synchro-50 rounded-xl border border-cosmic-200 hover:shadow-lg transition-all duration-300 group-hover:scale-105">
-                <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-cosmic-500 to-synchro-500 text-white rounded-xl mx-auto mb-3 text-lg font-bold">
+              <div className="text-center p-4 bg-gradient-to-br from-primary-50 to-accent-50 rounded-xl border border-primary-200 card-hover">
+                <div className="flex items-center justify-center w-12 h-12 bg-gradient-primary text-white rounded-xl mx-auto mb-3 text-lg font-bold">
                   #{index + 1}
                 </div>
-                <div className="text-xl font-bold text-cosmic-600 mb-1">
+                <div className="text-xl font-bold text-primary-600 mb-1">
                   {timeData.time}
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-text-secondary">
                   {timeData.total} events
                 </div>
               </div>
@@ -415,35 +410,35 @@ export default function SummarySection({ data }: SummarySectionProps) {
 
       {/* Insights Section */}
       <div className="space-y-6">
-        <h3 className="text-xl font-semibold text-gray-800 text-center">Cosmic Insights</h3>
+        <h3 className="section-subheader text-center">Key Insights</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <InsightCard
             icon={ArrowTrendingUpIcon}
             title="Best Synchronicity Day"
             description={`Your highest synchronicity rating was on ${stats.bestDay?.date ? new Date(stats.bestDay.date).toLocaleDateString() : 'N/A'}`}
-            highlight={`Score: ${stats.bestDay?.subjectiveSynchro?.toFixed(1) || 'N/A'}/10`}
-            color="cosmic"
+            highlight={`Score: ${stats.bestDay?.subjectivesynchro?.toFixed(1) || 'N/A'}/10`}
+            color="primary"
           />
           <InsightCard
-            icon={SparklesIcon}
+            icon={BoltIcon}
             title="Synchronicity Strength"
             description={`Your average synchronicity level is ${stats.avgSynchro >= 7 ? 'exceptionally high' : stats.avgSynchro >= 5 ? 'moderately strong' : 'developing'}`}
-            highlight={`You're in tune with cosmic patterns ${Math.round((stats.avgSynchro / 10) * 100)}% of the time`}
-            color="synchro"
+            highlight={`Awareness level: ${Math.round((stats.avgSynchro / 10) * 100)}%`}
+            color="accent"
           />
           <InsightCard
             icon={HeartIcon}
             title="Mood Connection"
-            description="Your mood and synchronicity levels often correlate, suggesting a deep connection between inner state and cosmic awareness"
-            highlight={`Mood-Sync correlation appears ${stats.avgMood > stats.avgSynchro ? 'positive' : 'inverse'}`}
-            color="green"
+            description="Your mood and synchronicity levels show correlation patterns, suggesting a connection between inner state and awareness"
+            highlight={`Mood-Sync correlation appears ${stats.avgMood > stats.avgSynchro ? 'positive' : 'balanced'}`}
+            color="success"
           />
           <InsightCard
             icon={ClockIcon}
             title="Temporal Patterns"
-            description={`Your most active synchronicity time is ${stats.topTimes[0]?.time}, when cosmic energy aligns with your awareness`}
-            highlight={`${stats.topTimes[0]?.total || 0} events recorded at this time`}
-            color="blue"
+            description={`Your most active synchronicity time is ${stats.topTimes[0]?.time}, indicating peak awareness periods`}
+            highlight={`${stats.topTimes[0]?.total || 0} events at this time`}
+            color="primary"
           />
         </div>
       </div>

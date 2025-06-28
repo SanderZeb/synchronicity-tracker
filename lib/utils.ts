@@ -16,7 +16,7 @@ export const formatDate = (dateStr: string | undefined, formatString: string = '
 }
 
 /**
- * Calculate average for a numeric field across data entries
+ * Calculate average for a numeric field across data entries (fixed for new schema)
  */
 export const calculateAverage = (data: SynchroData[], field: keyof SynchroData): number => {
   const validEntries = data.filter(d => d[field] != null)
@@ -27,10 +27,10 @@ export const calculateAverage = (data: SynchroData[], field: keyof SynchroData):
 }
 
 /**
- * Get color based on intensity/value
+ * Get color class based on intensity/value for the new design system
  */
 export const getIntensityColor = (value: number | undefined, max: number = 10): string => {
-  if (!value) return 'bg-gray-100 text-gray-400'
+  if (!value) return 'bg-gray-100 text-text-muted'
   const intensity = value / max
   
   if (intensity >= 0.8) return 'bg-green-500 text-white'
@@ -41,10 +41,10 @@ export const getIntensityColor = (value: number | undefined, max: number = 10): 
 }
 
 /**
- * Get text color class based on value
+ * Get text color class based on value for new design system
  */
 export const getValueTextColor = (value: number | undefined, max: number = 10): string => {
-  if (!value) return 'text-gray-400'
+  if (!value) return 'text-text-muted'
   const intensity = value / max
   
   if (intensity >= 0.8) return 'text-green-600'
@@ -55,7 +55,7 @@ export const getValueTextColor = (value: number | undefined, max: number = 10): 
 }
 
 /**
- * Calculate streak of consecutive days above threshold
+ * Calculate streak of consecutive days above threshold (fixed field names)
  */
 export const calculateStreak = (data: SynchroData[], field: keyof SynchroData, threshold: number = 5): number => {
   const sortedData = data
@@ -74,7 +74,7 @@ export const calculateStreak = (data: SynchroData[], field: keyof SynchroData, t
 }
 
 /**
- * Calculate trend between two periods
+ * Calculate trend between two periods (fixed field names)
  */
 export const calculateTrend = (data: SynchroData[], field: keyof SynchroData, daysRecent: number = 7): number => {
   const sortedData = data
@@ -91,7 +91,7 @@ export const calculateTrend = (data: SynchroData[], field: keyof SynchroData, da
 }
 
 /**
- * Get most common synchronicity times
+ * Get most common synchronicity times (fixed for new schema)
  */
 export const getTopSynchroTimes = (data: SynchroData[], limit: number = 5) => {
   const timeColumns = [
@@ -112,9 +112,9 @@ export const getTopSynchroTimes = (data: SynchroData[], limit: number = 5) => {
 }
 
 /**
- * Generate weekly pattern data
+ * Generate weekly pattern data (fixed field names)
  */
-export const getWeeklyPattern = (data: SynchroData[], field: keyof SynchroData = 'subjectiveSynchro') => {
+export const getWeeklyPattern = (data: SynchroData[], field: keyof SynchroData = 'subjectivesynchro') => {
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
   
   return days.map(day => {
@@ -169,7 +169,7 @@ const downloadFile = (content: string, filename: string, contentType: string): v
 }
 
 /**
- * Validate form data
+ * Validate form data (updated for new schema)
  */
 export const validateSynchroData = (data: Partial<SynchroData>): { isValid: boolean; errors: string[] } => {
   const errors: string[] = []
@@ -178,11 +178,11 @@ export const validateSynchroData = (data: Partial<SynchroData>): { isValid: bool
     errors.push('Date is required')
   }
   
-  if (data.subjectiveSynchro != null && (data.subjectiveSynchro < 0 || data.subjectiveSynchro > 10)) {
+  if (data.subjectivesynchro != null && (data.subjectivesynchro < 0 || data.subjectivesynchro > 10)) {
     errors.push('Synchronicity level must be between 0 and 10')
   }
   
-  if (data.subjectiveMood != null && (data.subjectiveMood < 0 || data.subjectiveMood > 10)) {
+  if (data.subjectivemood != null && (data.subjectivemood < 0 || data.subjectivemood > 10)) {
     errors.push('Mood must be between 0 and 10')
   }
   
@@ -190,7 +190,7 @@ export const validateSynchroData = (data: Partial<SynchroData>): { isValid: bool
     errors.push('Productivity must be between 0 and 10')
   }
   
-  if (data.sleepAvg != null && (data.sleepAvg < 0 || data.sleepAvg > 24)) {
+  if (data.sleepavg != null && (data.sleepavg < 0 || data.sleepavg > 24)) {
     errors.push('Sleep hours must be between 0 and 24')
   }
   
@@ -201,7 +201,7 @@ export const validateSynchroData = (data: Partial<SynchroData>): { isValid: bool
 }
 
 /**
- * Calculate synchronicity sum from time slots
+ * Calculate synchronicity sum from time slots (updated for new schema)
  */
 export const calculateSynchroSum = (data: Partial<SynchroData>): number => {
   const timeSlots = [
@@ -224,25 +224,25 @@ export const getInsightText = (value: number, type: 'synchronicity' | 'mood' | '
   
   const insights = {
     synchronicity: {
-      'high': 'You\'re highly attuned to cosmic patterns',
-      'good': 'Strong connection with synchronicity',
-      'moderate': 'Developing synchronicity awareness',
-      'low': 'Limited synchronicity perception',
-      'very low': 'Beginning synchronicity journey'
+      'high': 'Highly attuned to patterns',
+      'good': 'Strong pattern awareness',
+      'moderate': 'Developing awareness',
+      'low': 'Limited pattern perception',
+      'very low': 'Beginning awareness journey'
     },
     mood: {
       'high': 'Excellent emotional state',
-      'good': 'Positive emotional well-being',
-      'moderate': 'Balanced emotional state',
-      'low': 'Some emotional challenges',
-      'very low': 'Significant emotional concerns'
+      'good': 'Positive well-being',
+      'moderate': 'Balanced state',
+      'low': 'Some challenges',
+      'very low': 'Significant concerns'
     },
     productivity: {
-      'high': 'Exceptionally productive period',
-      'good': 'Strong productivity levels',
+      'high': 'Exceptionally productive',
+      'good': 'Strong productivity',
       'moderate': 'Steady productivity',
       'low': 'Productivity challenges',
-      'very low': 'Significant productivity issues'
+      'very low': 'Significant issues'
     }
   }
   
@@ -250,17 +250,15 @@ export const getInsightText = (value: number, type: 'synchronicity' | 'mood' | '
 }
 
 /**
- * Generate color palette for charts
+ * Generate color palette for charts (updated for new design system)
  */
 export const getChartColors = () => ({
-  cosmic: '#0ea5e9',
-  synchro: '#d946ef',
-  green: '#22c55e',
-  orange: '#f59e0b',
-  purple: '#8b5cf6',
-  red: '#ef4444',
-  blue: '#3b82f6',
-  yellow: '#eab308'
+  primary: '#3399e6',
+  accent: '#339999',
+  success: '#22c55e',
+  warning: '#f59e0b',
+  error: '#ef4444',
+  muted: '#6b7280'
 })
 
 /**
@@ -272,21 +270,169 @@ export const formatNumber = (value: number | undefined, decimals: number = 1): s
 }
 
 /**
- * Get moon phase emoji
+ * Get status color based on value and thresholds
  */
-export const getMoonPhaseEmoji = (phase: string | undefined): string => {
-  if (!phase) return '🌙'
+export const getStatusColor = (value: number | undefined, type: 'dot' | 'text' | 'bg' = 'dot'): string => {
+  if (value == null) return type === 'dot' ? 'bg-gray-300' : type === 'text' ? 'text-text-muted' : 'bg-gray-100'
   
-  const phases: Record<string, string> = {
-    'new': '🌑',
-    'waxing crescent': '🌒',
-    'first quarter': '🌓',
-    'waxing gibbous': '🌔',
-    'full': '🌕',
-    'waning gibbous': '🌖',
-    'last quarter': '🌗',
-    'waning crescent': '🌘'
+  const level = value >= 7 ? 'high' : value >= 5 ? 'medium' : value >= 3 ? 'low' : 'critical'
+  
+  const colors = {
+    dot: {
+      high: 'bg-green-500',
+      medium: 'bg-yellow-500',
+      low: 'bg-orange-500',
+      critical: 'bg-red-500'
+    },
+    text: {
+      high: 'text-green-600',
+      medium: 'text-yellow-600',
+      low: 'text-orange-600',
+      critical: 'text-red-600'
+    },
+    bg: {
+      high: 'bg-green-50 text-green-800',
+      medium: 'bg-yellow-50 text-yellow-800',
+      low: 'bg-orange-50 text-orange-800',
+      critical: 'bg-red-50 text-red-800'
+    }
   }
   
-  return phases[phase.toLowerCase()] || '🌙'
+  return colors[type][level]
+}
+
+/**
+ * Debounce function for search inputs
+ */
+export const debounce = <T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): ((...args: Parameters<T>) => void) => {
+  let timeout: NodeJS.Timeout
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout)
+    timeout = setTimeout(() => func(...args), wait)
+  }
+}
+
+/**
+ * Generate random ID for temporary use
+ */
+export const generateId = (): string => {
+  return Math.random().toString(36).substr(2, 9)
+}
+
+/**
+ * Clamp value between min and max
+ */
+export const clamp = (value: number, min: number, max: number): number => {
+  return Math.min(Math.max(value, min), max)
+}
+
+/**
+ * Check if value is within range
+ */
+export const isInRange = (value: number, min: number, max: number): boolean => {
+  return value >= min && value <= max
+}
+
+/**
+ * Get percentage between two values
+ */
+export const getPercentage = (value: number, min: number, max: number): number => {
+  return ((value - min) / (max - min)) * 100
+}
+
+/**
+ * Calculate correlation between two arrays
+ */
+export const calculateCorrelation = (x: number[], y: number[]): number => {
+  if (x.length !== y.length || x.length === 0) return 0
+  
+  const n = x.length
+  const sumX = x.reduce((a, b) => a + b, 0)
+  const sumY = y.reduce((a, b) => a + b, 0)
+  const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0)
+  const sumXX = x.reduce((sum, xi) => sum + xi * xi, 0)
+  const sumYY = y.reduce((sum, yi) => sum + yi * yi, 0)
+  
+  const numerator = n * sumXY - sumX * sumY
+  const denominator = Math.sqrt((n * sumXX - sumX * sumX) * (n * sumYY - sumY * sumY))
+  
+  return denominator === 0 ? 0 : numerator / denominator
+}
+
+/**
+ * Get time of day category
+ */
+export const getTimeCategory = (time: string): string => {
+  const hour = parseInt(time.split(':')[0])
+  
+  if (hour >= 6 && hour < 12) return 'Morning'
+  if (hour >= 12 && hour < 17) return 'Afternoon'
+  if (hour >= 17 && hour < 21) return 'Evening'
+  return 'Night'
+}
+
+/**
+ * Format duration in minutes to human readable
+ */
+export const formatDuration = (minutes: number): string => {
+  const hours = Math.floor(minutes / 60)
+  const mins = minutes % 60
+  
+  if (hours === 0) return `${mins}m`
+  if (mins === 0) return `${hours}h`
+  return `${hours}h ${mins}m`
+}
+
+/**
+ * Get day of week from date string
+ */
+export const getDayOfWeek = (dateStr: string): string => {
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+  const date = new Date(dateStr)
+  return days[date.getDay()]
+}
+
+/**
+ * Check if date is weekend
+ */
+export const isWeekend = (dateStr: string): boolean => {
+  const date = new Date(dateStr)
+  const day = date.getDay()
+  return day === 0 || day === 6 // Sunday or Saturday
+}
+
+/**
+ * Get relative time string
+ */
+export const getRelativeTime = (dateStr: string): string => {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+  
+  if (diffInDays === 0) return 'Today'
+  if (diffInDays === 1) return 'Yesterday'
+  if (diffInDays < 7) return `${diffInDays} days ago`
+  if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`
+  return `${Math.floor(diffInDays / 30)} months ago`
+}
+
+/**
+ * Safely parse JSON
+ */
+export const safeJsonParse = <T>(str: string, fallback: T): T => {
+  try {
+    return JSON.parse(str)
+  } catch {
+    return fallback
+  }
+}
+
+/**
+ * Create array of specified length with default value
+ */
+export const createArray = <T>(length: number, defaultValue: T): T[] => {
+  return Array(length).fill(defaultValue)
 }

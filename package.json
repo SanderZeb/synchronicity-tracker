@@ -4,7 +4,13 @@
   "private": true,
   "description": "A comprehensive synchronicity and life metrics tracking application",
   "author": "Cosmic Developer",
-  "keywords": ["synchronicity", "tracking", "dashboard", "analytics", "consciousness"],
+  "keywords": [
+    "synchronicity",
+    "tracking",
+    "dashboard",
+    "analytics",
+    "consciousness"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -16,15 +22,16 @@
     "analyze": "cross-env ANALYZE=true next build"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.1",
     "@heroicons/react": "^2.0.18",
+    "@supabase/supabase-js": "^2.50.2",
+    "clsx": "^2.0.0",
+    "date-fns": "^3.6.0",
+    "lucide-react": "^0.294.0",
     "next": "14.0.4",
+    "papaparse": "^5.5.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "recharts": "^2.8.0",
-    "date-fns": "^3.6.0",
-    "lucide-react": "^0.294.0",
-    "clsx": "^2.0.0",
     "tailwind-merge": "^2.2.0"
   },
   "devDependencies": {

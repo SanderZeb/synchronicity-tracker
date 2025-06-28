@@ -10,30 +10,23 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  // Add this line
-  metadataBase: new URL('http://localhost:3000'), // Replace with your production domain
+  metadataBase: new URL('http://localhost:3000'),
   
   title: {
     default: 'Synchronicity Tracker',
     template: '%s | Synchronicity Tracker'
   },
-  description: 'Track synchronicities, health metrics, and life patterns to discover cosmic connections and personal insights.',
+  description: 'Personal synchronicity and life metrics tracking dashboard.',
   keywords: [
     'synchronicity',
-    'life tracking',
-    'personal analytics',
-    'consciousness',
-    'patterns',
-    'cosmic awareness',
-    'health metrics',
-    'mood tracking',
-    'productivity tracking'
+    'tracking',
+    'dashboard',
+    'analytics',
+    'personal metrics'
   ],
-  authors: [{ name: 'Cosmic Developer' }],
-  creator: 'Synchronicity Tracker Team',
-  publisher: 'Synchronicity Tracker',
+  authors: [{ name: 'Tracker Team' }],
   robots: {
-    index: false, // Since this is a personal tracking app
+    index: false,
     follow: false,
     googleBot: {
       index: false,
@@ -44,22 +37,8 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     title: 'Synchronicity Tracker',
-    description: 'Track synchronicities, health metrics, and life patterns to discover cosmic connections.',
-    siteName: 'Synchronicity Tracker',
-    images: [
-      {
-        url: '/og-image.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'Synchronicity Tracker - Discover Cosmic Patterns'
-      }
-    ]
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Synchronicity Tracker',
-    description: 'Track synchronicities and discover cosmic patterns in your life.',
-    images: ['/og-image.jpg']
+    description: 'Personal synchronicity and life metrics tracking dashboard.',
+    siteName: 'Synchronicity Tracker'
   },
   icons: {
     icon: [
@@ -68,13 +47,9 @@ export const metadata: Metadata = {
     ],
     apple: [
       { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }
-    ],
-    other: [
-      { rel: 'mask-icon', url: '/safari-pinned-tab.svg', color: '#0ea5e9' }
     ]
   },
-  manifest: '/site.webmanifest',
-  category: 'lifestyle'
+  manifest: '/site.webmanifest'
 }
 
 export const viewport: Viewport = {
@@ -84,7 +59,7 @@ export const viewport: Viewport = {
   userScalable: true,
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#0f172a' }
+    { media: '(prefers-color-scheme: dark)', color: '#1a202c' }
   ]
 }
 
@@ -99,10 +74,6 @@ export default function RootLayout({
         {/* Preload critical resources */}
         <link rel="preload" href="/fonts/inter-var.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         
-        {/* DNS prefetch for external resources */}
-        <link rel="dns-prefetch" href="//fonts.googleapis.com" />
-        <link rel="dns-prefetch" href="//fonts.gstatic.com" />
-        
         {/* Security headers */}
         <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
         <meta httpEquiv="X-Frame-Options" content="DENY" />
@@ -110,9 +81,9 @@ export default function RootLayout({
         
         {/* Additional meta tags */}
         <meta name="format-detection" content="telephone=no" />
-        <meta name="color-scheme" content="light dark" />
+        <meta name="color-scheme" content="light" />
         
-        {/* Structured data for better SEO */}
+        {/* Structured data */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -120,15 +91,9 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "WebApplication",
               "name": "Synchronicity Tracker",
-              "description": "Track synchronicities, health metrics, and life patterns to discover cosmic connections.",
-              "url": "https://synchronicity-tracker.app",
-              "applicationCategory": "LifestyleApplication",
-              "operatingSystem": "Web Browser",
-              "offers": {
-                "@type": "Offer",
-                "price": "0",
-                "priceCurrency": "USD"
-              }
+              "description": "Personal synchronicity and life metrics tracking dashboard.",
+              "applicationCategory": "UtilitiesApplication",
+              "operatingSystem": "Web Browser"
             })
           }}
         />
@@ -138,27 +103,15 @@ export default function RootLayout({
           {/* Skip to main content for accessibility */}
           <a 
             href="#main-content" 
-            className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-cosmic-600 text-white px-4 py-2 rounded-lg z-50"
+            className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary-600 text-white px-4 py-2 rounded-lg z-50"
           >
             Skip to main content
           </a>
           
           {/* Main application wrapper */}
-          <div className="min-h-screen bg-gradient-to-br from-cosmic-50 via-white to-synchro-50">
-            {/* Background pattern overlay */}
-            <div className="fixed inset-0 opacity-30 pointer-events-none">
-              <div className="absolute inset-0 bg-gradient-to-br from-cosmic-100/20 to-synchro-100/20" />
-              <div 
-                className="absolute inset-0 opacity-10"
-                style={{
-                  backgroundImage: `radial-gradient(circle at 25% 25%, rgba(14, 165, 233, 0.1) 0%, transparent 50%), 
-                                   radial-gradient(circle at 75% 75%, rgba(217, 70, 239, 0.1) 0%, transparent 50%)`
-                }}
-              />
-            </div>
-            
+          <div className="min-h-screen bg-background">
             {/* Main content */}
-            <main id="main-content" className="relative z-10">
+            <main id="main-content" className="relative">
               {children}
             </main>
             
@@ -167,28 +120,18 @@ export default function RootLayout({
           </div>
         </ErrorBoundary>
         
-        {/* Performance monitoring script (placeholder) */}
+        {/* Performance monitoring script */}
         {process.env.NODE_ENV === 'production' && (
           <script
             dangerouslySetInnerHTML={{
               __html: `
-                // Performance monitoring
                 if ('performance' in window) {
                   window.addEventListener('load', function() {
                     const timing = performance.timing;
                     const loadTime = timing.loadEventEnd - timing.navigationStart;
-                    console.log('Page load time:', loadTime + 'ms');
+                    console.log('Load time:', loadTime + 'ms');
                   });
                 }
-                
-                // Report critical errors
-                window.addEventListener('error', function(e) {
-                  console.error('Uncaught error:', e.error);
-                });
-                
-                window.addEventListener('unhandledrejection', function(e) {
-                  console.error('Unhandled promise rejection:', e.reason);
-                });
               `
             }}
           />
