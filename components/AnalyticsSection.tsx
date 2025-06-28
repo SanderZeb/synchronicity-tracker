@@ -336,7 +336,7 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ range, count, label }) => `${label}: ${count}`}
+                    label={({ count, label }) => `${label}: ${count}`}
                     outerRadius={120}
                     fill="#8884d8"
                     dataKey="count"
