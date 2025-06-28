@@ -9,12 +9,10 @@ import ViewSection from '../components/ViewSection'
 import { 
   ChartBarIcon, 
   PlusIcon, 
-  DocumentTextIcon, 
   EyeIcon,
   Cog6ToothIcon,
   ArrowDownTrayIcon,
   HomeIcon,
-  BellIcon,
   UserIcon
 } from '@heroicons/react/24/outline'
 
