@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { SynchroData, fetchAllData, convertToDisplay, SynchroDataDisplay } from '../lib/supabase'
+import { SynchroData, fetchAllData} from '../lib/supabase'
 import AnalyticsSection from '../components/AnalyticsSection'
 import InputSection from '../components/InputSection'
 import SummarySection from '../components/SummarySection'
@@ -88,7 +88,7 @@ export default function Dashboard() {
     { id: 'data', label: 'Data', icon: EyeIcon },
   ]
 
-  const quickStats = {
+const quickStats = {
     totalEntries: data.length,
     avgSynchronicity: data.length > 0 
       ? (data.filter(d => d.subjectivesynchro != null)

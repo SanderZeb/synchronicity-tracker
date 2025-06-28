@@ -30,10 +30,10 @@ export default function ViewSection({ data }: ViewSectionProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [dateFilter, setDateFilter] = useState({ start: '', end: '' })
   const [rangeFilters, setRangeFilters] = useState({
-    synchroMin: 0,
-    synchroMax: 10,
-    moodMin: 0,
-    moodMax: 10
+    synchroMin: 1,
+    synchroMax: 5,
+    moodMin: 1,
+    moodMax: 5
   })
   const [sortField, setSortField] = useState<SortField>('date')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
