@@ -346,7 +346,7 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
                     ))}
                   </Pie>
                   <Tooltip 
-                    formatter={(value, name) => [value, 'Count']}
+                    formatter={(value) => [value, 'Count']}
                     contentStyle={{
                       backgroundColor: 'white',
                       border: '1px solid #e2e8f0',
