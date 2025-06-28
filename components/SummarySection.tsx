@@ -1,17 +1,18 @@
 'use client'
 
 import { SynchroData } from '../lib/supabase'
-import { 
-  SparklesIcon, 
-  HeartIcon, 
-  MoonIcon, 
+import {
+  SparklesIcon,
+  HeartIcon,
+  MoonIcon,
   SunIcon,
   ChartBarIcon,
   CalendarIcon,
   TrendingUpIcon,
   TrendingDownIcon,
   ClockIcon,
-  FireIcon
+  FireIcon,
+  PlusIcon
 } from '@heroicons/react/24/outline'
 import { LineChart, Line, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts'
 
@@ -30,33 +31,33 @@ export default function SummarySection({ data }: SummarySectionProps) {
     const validSleep = data.filter(d => d.sleepAvg != null)
 
     // Basic averages
-    const avgSynchro = validSynchro.length > 0 
-      ? validSynchro.reduce((sum, d) => sum + (d.subjectiveSynchro || 0), 0) / validSynchro.length 
+    const avgSynchro = validSynchro.length > 0
+      ? validSynchro.reduce((sum, d) => sum + (d.subjectiveSynchro || 0), 0) / validSynchro.length
       : 0
 
     const totalSynchroSum = data.reduce((sum, d) => sum + (d.synchroSum || 0), 0)
 
-    const avgMood = validMood.length > 0 
-      ? validMood.reduce((sum, d) => sum + (d.subjectiveMood || 0), 0) / validMood.length 
+    const avgMood = validMood.length > 0
+      ? validMood.reduce((sum, d) => sum + (d.subjectiveMood || 0), 0) / validMood.length
       : 0
 
-    const avgProductivity = validProductivity.length > 0 
-      ? validProductivity.reduce((sum, d) => sum + (d.productivity || 0), 0) / validProductivity.length 
+    const avgProductivity = validProductivity.length > 0
+      ? validProductivity.reduce((sum, d) => sum + (d.productivity || 0), 0) / validProductivity.length
       : 0
 
-    const avgSleep = validSleep.length > 0 
-      ? validSleep.reduce((sum, d) => sum + (d.sleepAvg || 0), 0) / validSleep.length 
+    const avgSleep = validSleep.length > 0
+      ? validSleep.reduce((sum, d) => sum + (d.sleepAvg || 0), 0) / validSleep.length
       : 0
 
     // Trend analysis (last 7 days vs previous 7 days)
     const sortedData = data.filter(d => d.date).sort((a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime())
     const recent7 = sortedData.slice(0, 7)
     const previous7 = sortedData.slice(7, 14)
-    
+
     const recentAvgSynchro = recent7.filter(d => d.subjectiveSynchro != null).length > 0
       ? recent7.filter(d => d.subjectiveSynchro != null).reduce((sum, d) => sum + (d.subjectiveSynchro || 0), 0) / recent7.filter(d => d.subjectiveSynchro != null).length
       : 0
-    
+
     const previousAvgSynchro = previous7.filter(d => d.subjectiveSynchro != null).length > 0
       ? previous7.filter(d => d.subjectiveSynchro != null).reduce((sum, d) => sum + (d.subjectiveSynchro || 0), 0) / previous7.filter(d => d.subjectiveSynchro != null).length
       : 0
@@ -65,7 +66,7 @@ export default function SummarySection({ data }: SummarySectionProps) {
 
     // Most active synchronicity times
     const timeColumns = [
-      '01:01', '02:02', '03:03', '04:04', '05:05', '06:06', 
+      '01:01', '02:02', '03:03', '04:04', '05:05', '06:06',
       '07:07', '08:08', '09:09', '10:10', '11:11', '12:12',
       '13:13', '14:14', '15:15', '16:16', '17:17', '18:18',
       '19:19', '20:20', '21:21', '22:22', '23:23', '00:00'
@@ -82,11 +83,11 @@ export default function SummarySection({ data }: SummarySectionProps) {
 
     // Best and worst days
     const daysWithSynchro = data.filter(d => d.date && d.subjectiveSynchro != null)
-    const bestDay = daysWithSynchro.reduce((best, current) => 
+    const bestDay = daysWithSynchro.reduce((best, current) =>
       (current.subjectiveSynchro || 0) > (best.subjectiveSynchro || 0) ? current : best
     , daysWithSynchro[0])
-    
-    const worstDay = daysWithSynchro.reduce((worst, current) => 
+
+    const worstDay = daysWithSynchro.reduce((worst, current) =>
       (current.subjectiveSynchro || 0) < (worst.subjectiveSynchro || 0) ? current : worst
     , daysWithSynchro[0])
 
@@ -101,7 +102,7 @@ export default function SummarySection({ data }: SummarySectionProps) {
       const avgSynchroForDay = dayData.filter(d => d.subjectiveSynchro != null).length > 0
         ? dayData.filter(d => d.subjectiveSynchro != null).reduce((sum, d) => sum + (d.subjectiveSynchro || 0), 0) / dayData.filter(d => d.subjectiveSynchro != null).length
         : 0
-      
+
       return {
         day: day.slice(0, 3),
         synchronicity: avgSynchroForDay,
@@ -173,11 +174,11 @@ export default function SummarySection({ data }: SummarySectionProps) {
     )
   }
 
-  const MetricCard = ({ 
-    title, 
-    value, 
-    subtitle, 
-    icon: Icon, 
+  const MetricCard = ({
+    title,
+    value,
+    subtitle,
+    icon: Icon,
     color = 'cosmic',
     trend,
     miniChart
@@ -192,7 +193,7 @@ export default function SummarySection({ data }: SummarySectionProps) {
   }) => {
     const colorClasses = {
       cosmic: 'from-cosmic-500 to-cosmic-600',
-      synchro: 'from-synchro-500 to-synchro-600', 
+      synchro: 'from-synchro-500 to-synchro-600',
       green: 'from-green-500 to-green-600',
       blue: 'from-blue-500 to-blue-600',
       purple: 'from-purple-500 to-purple-600',
@@ -202,7 +203,7 @@ export default function SummarySection({ data }: SummarySectionProps) {
     return (
       <div className="group relative bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden">
         <div className={`absolute inset-0 bg-gradient-to-r ${colorClasses[color]} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
-        
+
         <div className="relative p-6">
           <div className="flex items-start justify-between mb-4">
             <div className={`p-3 rounded-xl bg-gradient-to-r ${colorClasses[color]} shadow-lg`}>
@@ -221,7 +222,7 @@ export default function SummarySection({ data }: SummarySectionProps) {
               </div>
             )}
           </div>
-          
+
           <div className="space-y-2">
             <h3 className="font-semibold text-gray-700 text-sm">{title}</h3>
             <p className="text-3xl font-bold text-gray-900">{value}</p>
@@ -232,10 +233,10 @@ export default function SummarySection({ data }: SummarySectionProps) {
             <div className="mt-4 h-12">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={miniChart}>
-                  <Line 
-                    type="monotone" 
-                    dataKey="value" 
-                    stroke="currentColor" 
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="currentColor"
                     strokeWidth={2}
                     dot={false}
                     className="text-cosmic-500"
@@ -249,10 +250,10 @@ export default function SummarySection({ data }: SummarySectionProps) {
     )
   }
 
-  const InsightCard = ({ 
-    icon: Icon, 
-    title, 
-    description, 
+  const InsightCard = ({
+    icon: Icon,
+    title,
+    description,
     highlight,
     color = 'cosmic'
   }: {
@@ -372,7 +373,7 @@ export default function SummarySection({ data }: SummarySectionProps) {
             <BarChart data={stats.weeklyData}>
               <XAxis dataKey="day" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip 
+              <Tooltip
                 formatter={(value) => [Number(value).toFixed(1), 'Avg Synchronicity']}
                 contentStyle={{
                   backgroundColor: 'white',
