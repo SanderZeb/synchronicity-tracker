@@ -48,7 +48,7 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
   }
 
   // Process data for synchronicity heatmap
-  const prepareHeatmapData = () => {
+   const prepareHeatmapData = () => {
     const timeColumns = [
       '00:00', '01:01', '02:02', '03:03', '04:04', '05:05', '06:06', 
       '07:07', '08:08', '09:09', '10:10', '11:11', '12:12',
@@ -65,18 +65,22 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
     for (let row = 0; row < 7; row++) {
       for (let col = 0; col < timeColumns.length; col++) {
         const time = timeColumns[col]
-        const total = data.reduce((sum, d) => sum + (d[time as keyof SynchroData] as number || 0), 0)
-        const intensity = maxValue > 0 ? (total / maxValue) : 0
         
-        heatmapData.push({
-          x: col,
-          y: row,
-          time,
-          value: total,
-          intensity,
-          hour: time.split(':')[0],
-          minute: time.split(':')[1]
-        })
+        // Add a check to ensure 'time' is not undefined
+        if (time) {
+          const total = data.reduce((sum, d) => sum + (d[time as keyof SynchroData] as number || 0), 0)
+          const intensity = maxValue > 0 ? (total / maxValue) : 0
+          
+          heatmapData.push({
+            x: col,
+            y: row,
+            time,
+            value: total,
+            intensity,
+            hour: time.split(':')[0],
+            minute: time.split(':')[1]
+          })
+        }
       }
     }
 
