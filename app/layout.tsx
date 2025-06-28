@@ -10,6 +10,9 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
+  // Add this line
+  metadataBase: new URL('http://localhost:3000'), // Replace with your production domain
+  
   title: {
     default: 'Synchronicity Tracker',
     template: '%s | Synchronicity Tracker'
