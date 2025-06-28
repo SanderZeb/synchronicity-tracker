@@ -28,7 +28,7 @@ export interface ChartDataPoint {
 export interface HeatmapCell {
   x: number
   y: number
-  time: string
+  time?: string
   value: number
   intensity: number
 }
