@@ -409,7 +409,7 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
   }
 
   const timelineData = prepareTimelineData()
-  const { heatmapData, maxValue, xLabels, yLabels } = prepareHeatmapData()
+  const { heatmapData, xLabels, yLabels } = prepareHeatmapData()
   const moodData = prepareMoodData()
   const correlationData = prepareCorrelationData()
 
