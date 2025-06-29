@@ -86,13 +86,17 @@ export default function SummarySection({ data }: SummarySectionProps) {
 
     // Best and worst days
     const daysWithSynchro = data.filter(d => d.date && d.subjectivesynchro != null)
-    const bestDay = daysWithSynchro.reduce((best, current) =>
-      (current.subjectivesynchro || 0) > (best.subjectivesynchro || 0) ? current : best
-    , daysWithSynchro[0])
+    const bestDay = daysWithSynchro.length > 0 
+      ? daysWithSynchro.reduce((best, current) =>
+          (current.subjectivesynchro || 0) > (best.subjectivesynchro || 0) ? current : best
+        )
+      : null
 
-    const worstDay = daysWithSynchro.reduce((worst, current) =>
-      (current.subjectivesynchro || 0) < (worst.subjectivesynchro || 0) ? current : worst
-    , daysWithSynchro[0])
+    const worstDay = daysWithSynchro.length > 0
+      ? daysWithSynchro.reduce((worst, current) =>
+          (current.subjectivesynchro || 0) < (worst.subjectivesynchro || 0) ? current : worst
+        )
+      : null
 
     // Date range
     const dates = data.filter(d => d.date).map(d => new Date(d.date!))
@@ -130,8 +134,8 @@ export default function SummarySection({ data }: SummarySectionProps) {
       endDate,
       totalDays: dates.length,
       synchroTrend,
-      bestDay,
-      worstDay,
+      bestDay: bestDay || undefined,
+      worstDay: worstDay || undefined,
       weeklyData,
       recentTimeline,
       streakDays: calculateStreak(sortedData)
@@ -468,7 +472,10 @@ export default function SummarySection({ data }: SummarySectionProps) {
           <InsightCard
             icon={ArrowTrendingUpIcon}
             title="Peak Synchronicity Day"
-            description={`Your highest recorded synchronicity was on ${stats.bestDay?.date ? formatDate(stats.bestDay.date) : 'N/A'}, showing exceptional cosmic awareness.`}
+            description={stats.bestDay?.date 
+              ? `Your highest recorded synchronicity was on ${formatDate(stats.bestDay.date)}, showing exceptional cosmic awareness.`
+              : 'Start tracking to discover your peak synchronicity patterns.'
+            }
             highlight={`Score: ${stats.bestDay?.subjectivesynchro?.toFixed(1) || 'N/A'}/5`}
             color="primary"
           />
