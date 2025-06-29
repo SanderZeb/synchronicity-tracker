@@ -24,7 +24,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     return { hasError: true, error }
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('Error caught by boundary:', error, errorInfo)
     this.setState({ error, errorInfo })
   }
@@ -33,7 +33,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     this.setState({ hasError: false, error: undefined, errorInfo: undefined })
   }
 
-  render() {
+  override render() {
     if (this.state.hasError) {
       if (this.props.fallback) {
         const FallbackComponent = this.props.fallback
@@ -90,7 +90,7 @@ const DefaultErrorFallback = ({
       <div className="space-y-3">
         <button
           onClick={resetError}
-          className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-cosmic-600 to-synchro-600 text-white rounded-lg font-medium hover:from-cosmic-700 hover:to-synchro-700 transition-all duration-200 transform hover:scale-105"
+          className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-primary-600 to-accent-600 text-white rounded-lg font-medium hover:from-primary-700 hover:to-accent-700 transition-all duration-200 transform hover:scale-105"
         >
           <ArrowPathIcon className="h-5 w-5" />
           <span>Try Again</span>
