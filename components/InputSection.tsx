@@ -26,9 +26,9 @@ interface ValidationErrors {
 export default function InputSection({ onDataUpdate }: InputSectionProps) {
   const [formData, setFormData] = useState<Partial<SynchroData>>({
     date: new Date().toISOString().split('T')[0],
-    subjectivesynchro: 5,
-    subjectivemood: 5,
-    productivity: 5
+    subjectivesynchro: 3, // Default to middle of 1-5 scale
+    subjectivemood: 3,
+    productivity: 3
   })
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -55,12 +55,19 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
       errors.date = 'Date is required'
     }
 
-    if (formData.subjectivesynchro && (formData.subjectivesynchro < 0 || formData.subjectivesynchro > 10)) {
-      errors.subjectivesynchro = 'Synchronicity level must be between 0 and 10'
-    }
+    // Validate 1-5 scale fields
+    const scaleFields = ['subjectivesynchro', 'subjectivemood', 'productivity', 'statehealth', 'staterelationship', 'stateselfesteem', 'stateinteligence', 'statesocialskill', 'stateimmerse', 'stres']
+    
+    scaleFields.forEach(field => {
+      const value = formData[field as keyof SynchroData] as number
+      if (value != null && (value < 1 || value > 5)) {
+        errors[field] = `${field} must be between 1 and 5`
+      }
+    })
 
-    if (formData.sleepavg && (formData.sleepavg < 0 || formData.sleepavg > 24)) {
-      errors.sleepavg = 'Sleep hours must be between 0 and 24'
+    // Sleep validation (convert hours to minutes for storage)
+    if (formData.sleepavg && (formData.sleepavg < 0 || formData.sleepavg > 16)) {
+      errors.sleepavg = 'Sleep hours must be between 0 and 16'
     }
 
     setValidationErrors(errors)
@@ -90,9 +97,11 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
         return sum + (formData[time as keyof SynchroData] as number || 0)
       }, 0)
 
+      // Convert sleep hours to minutes for storage
       const dataToSubmit = {
         ...formData,
-        synchrosum
+        synchrosum,
+        sleepavg: formData.sleepavg ? formData.sleepavg * 60 : undefined // Convert hours to minutes
       }
 
       await insertSynchroData(dataToSubmit)
@@ -104,9 +113,9 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
         setSuccess(false)
         setFormData({
           date: new Date().toISOString().split('T')[0],
-          subjectivesynchro: 5,
-          subjectivemood: 5,
-          productivity: 5
+          subjectivesynchro: 3,
+          subjectivemood: 3,
+          productivity: 3
         })
         setActiveSection('basic')
       }, 2000)
@@ -143,11 +152,12 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
   const RangeInput = ({ 
     label, 
     field, 
-    min = 0, 
-    max = 10, 
+    min = 1, 
+    max = 5, 
     step = 0.1,
     color = 'primary',
-    icon: Icon
+    icon: Icon,
+    description
   }: {
     label: string
     field: keyof SynchroData
@@ -156,8 +166,9 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
     step?: number
     color?: 'primary' | 'accent' | 'success'
     icon?: React.ComponentType<any>
+    description?: string
   }) => {
-    const value = formData[field] as number || 0
+    const value = formData[field] as number || min
     const percentage = ((value - min) / (max - min)) * 100
     
     const colorClasses = {
@@ -166,17 +177,40 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
       success: 'bg-green-500'
     }
 
+    const getValueLabel = (val: number) => {
+      if (max === 5) {
+        if (val <= 1.5) return 'Very Low'
+        if (val <= 2.5) return 'Low'
+        if (val <= 3.5) return 'Moderate'
+        if (val <= 4.5) return 'High'
+        return 'Very High'
+      }
+      return val.toFixed(1)
+    }
+
     return (
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
           <label className="flex items-center space-x-2 text-sm font-medium text-text-primary">
             {Icon && <Icon className="h-4 w-4 text-text-secondary" />}
             <span>{label}</span>
           </label>
-          <span className={`px-3 py-1 rounded-full text-sm font-semibold text-white ${colorClasses[color]}`}>
-            {value.toFixed(1)}
-          </span>
+          <div className="text-right">
+            <span className={`px-3 py-1 rounded-full text-sm font-semibold text-white ${colorClasses[color]}`}>
+              {value.toFixed(1)}
+            </span>
+            {max === 5 && (
+              <div className="text-xs text-text-muted mt-1">
+                {getValueLabel(value)}
+              </div>
+            )}
+          </div>
         </div>
+        
+        {description && (
+          <p className="text-xs text-text-secondary italic">{description}</p>
+        )}
+        
         <div className="relative">
           <input
             type="range"
@@ -186,6 +220,9 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
             value={value}
             onChange={(e) => handleChange(field, parseFloat(e.target.value))}
             className="w-full"
+            style={{
+              background: `linear-gradient(to right, ${colorClasses[color].replace('bg-', '#')} 0%, ${colorClasses[color].replace('bg-', '#')} ${percentage}%, #e8ecf0 ${percentage}%, #e8ecf0 100%)`
+            }}
           />
           <div className="flex justify-between text-xs text-text-muted mt-1">
             <span>{min}</span>
@@ -204,23 +241,34 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
     field, 
     placeholder = '0',
     unit = '',
-    icon: Icon
+    icon: Icon,
+    description,
+    min,
+    max
   }: {
     label: string
     field: keyof SynchroData
     placeholder?: string
     unit?: string
     icon?: React.ComponentType<any>
+    description?: string
+    min?: number
+    max?: number
   }) => (
     <div className="space-y-2">
       <label className="flex items-center space-x-2 text-sm font-medium text-text-primary">
         {Icon && <Icon className="h-4 w-4 text-text-secondary" />}
         <span>{label}</span>
       </label>
+      {description && (
+        <p className="text-xs text-text-secondary italic">{description}</p>
+      )}
       <div className="relative">
         <input
           type="number"
           step="0.1"
+          min={min}
+          max={max}
           placeholder={placeholder}
           value={formData[field] as number || ''}
           onChange={(e) => handleChange(field, e.target.value ? parseFloat(e.target.value) : null)}
@@ -244,7 +292,7 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
       <div className="text-center">
         <h4 className="section-subheader">Synchronicity Events</h4>
         <p className="text-sm text-text-secondary">
-          Click time slots to record synchronicity events
+          Click time slots to record synchronicity events (count = number of events at that time)
         </p>
       </div>
       
@@ -273,22 +321,23 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
         </button>
       </div>
 
-      {/* Time Grid */}
+      {/* Time Grid with improved styling */}
       <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
         {timeSlots.map(time => {
           const value = formData[time as keyof SynchroData] as number || 0
-          const intensity = Math.min(value / 5, 1)
+          const intensity = Math.min(value / 5, 1) // Max intensity at 5 events
           
           return (
             <div key={time} className="text-center">
               <div className="text-xs font-medium text-text-secondary mb-1">{time}</div>
               <div className="relative group">
                 <div 
-                  className={`time-slot ${value > 0 ? 'time-slot-filled' : 'time-slot-empty'}`}
+                  className={`time-slot ${value > 0 ? 'time-slot-filled' : 'time-slot-empty'} transition-all duration-200 hover:scale-105`}
                   style={{
                     backgroundColor: value > 0 
                       ? `rgba(51, 153, 230, ${0.3 + intensity * 0.7})`
-                      : 'transparent'
+                      : 'transparent',
+                    transform: value > 0 ? 'scale(1.05)' : 'scale(1)'
                   }}
                   onClick={() => handleChange(time as keyof SynchroData, value + 1)}
                 >
@@ -303,7 +352,7 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
                       e.stopPropagation()
                       handleChange(time as keyof SynchroData, Math.max(0, value - 1))
                     }}
-                    className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
                   >
                     ×
                   </button>
@@ -314,8 +363,15 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
         })}
       </div>
       
-      <div className="text-center text-xs text-text-secondary">
-        Total events: {timeSlots.reduce((sum, time) => sum + (formData[time as keyof SynchroData] as number || 0), 0)}
+      <div className="text-center">
+        <div className="inline-flex items-center space-x-4 text-sm">
+          <span className="text-text-secondary">
+            Total events: <span className="font-semibold text-text-primary">{timeSlots.reduce((sum, time) => sum + (formData[time as keyof SynchroData] as number || 0), 0)}</span>
+          </span>
+          <span className="badge badge-primary">
+            Peak: {Math.max(...timeSlots.map(time => formData[time as keyof SynchroData] as number || 0))}
+          </span>
+        </div>
       </div>
     </div>
   )
@@ -334,11 +390,11 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
       <div className="text-center">
         <h2 className="section-header">Add New Entry</h2>
         <p className="text-text-secondary">
-          Record your daily synchronicity and life metrics
+          Record your daily synchronicity and life metrics (1-5 scale)
         </p>
       </div>
 
-      {/* Section Navigation */}
+      {/* Section Navigation with improved styling */}
       <div className="flex flex-wrap justify-center gap-2">
         {sections.map(section => {
           const Icon = section.icon
@@ -347,13 +403,13 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
               key={section.id}
               type="button"
               onClick={() => setActiveSection(section.id)}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+              className={`flex items-center space-x-2 px-4 py-3 rounded-xl transition-all duration-200 transform hover:scale-105 ${
                 activeSection === section.id
-                  ? 'bg-gradient-primary text-white shadow-soft'
-                  : 'bg-white text-text-secondary border border-gray-200 hover:border-primary-200 hover:text-text-primary'
+                  ? 'bg-gradient-primary text-white shadow-medium'
+                  : 'bg-white text-text-secondary border-2 border-gray-200 hover:border-primary-300 hover:text-text-primary hover:shadow-soft'
               }`}
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-5 w-5" />
               <span className="text-sm font-medium">{section.label}</span>
             </button>
           )
@@ -366,7 +422,7 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
           
           {/* Basic Information */}
           {activeSection === 'basic' && (
-            <div className="card p-8">
+            <div className="card p-8 space-y-6">
               <h3 className="section-subheader flex items-center space-x-2">
                 <CpuChipIcon className="h-5 w-5 text-primary-600" />
                 <span>Basic Information</span>
@@ -400,28 +456,31 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
 
           {/* Daily Ratings */}
           {activeSection === 'ratings' && (
-            <div className="card p-8">
+            <div className="card p-8 space-y-8">
               <h3 className="section-subheader flex items-center space-x-2">
                 <HeartIcon className="h-5 w-5 text-red-500" />
-                <span>Daily Ratings</span>
+                <span>Daily Ratings (1-5 Scale)</span>
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <RangeInput 
                   label="Synchronicity Level" 
                   field="subjectivesynchro" 
                   color="primary"
                   icon={BoltIcon}
+                  description="How many meaningful coincidences did you notice?"
                 />
                 <RangeInput 
                   label="Mood" 
                   field="subjectivemood" 
                   color="success"
                   icon={HeartIcon}
+                  description="Your overall emotional state today"
                 />
                 <RangeInput 
                   label="Productivity" 
                   field="productivity" 
                   color="accent"
+                  description="How productive and focused were you?"
                 />
               </div>
             </div>
@@ -440,19 +499,51 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
 
           {/* Health & Sleep */}
           {activeSection === 'health' && (
-            <div className="card p-8">
+            <div className="card p-8 space-y-8">
               <h3 className="section-subheader flex items-center space-x-2">
                 <MoonIcon className="h-5 w-5 text-purple-600" />
                 <span>Health & Sleep</span>
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <NumberInput label="Sleep Hours" field="sleepavg" placeholder="8.0" unit="hrs" icon={MoonIcon} />
-                <NumberInput label="Heart Rate (Daily)" field="heartratedaily" placeholder="70" unit="bpm" icon={HeartIcon} />
-                <NumberInput label="Heart Rate (Resting)" field="heartrateresting" placeholder="60" unit="bpm" />
-                <NumberInput label="Steps" field="stepsphone" placeholder="10000" unit="steps" />
-                <NumberInput label="Weight" field="weight" placeholder="70.0" unit="kg" />
-                <div>
-                  <RangeInput label="Stress Level" field="stres" color="accent" />
+                <NumberInput 
+                  label="Sleep Hours" 
+                  field="sleepavg" 
+                  placeholder="8.0" 
+                  unit="hrs" 
+                  icon={MoonIcon}
+                  description="How many hours did you sleep?"
+                  min={0}
+                  max={16}
+                />
+                <NumberInput 
+                  label="Heart Rate (Daily)" 
+                  field="heartratedaily" 
+                  placeholder="70" 
+                  unit="bpm" 
+                  icon={HeartIcon}
+                  description="Average heart rate during active hours"
+                />
+                <NumberInput 
+                  label="Steps" 
+                  field="stepsphone" 
+                  placeholder="10000" 
+                  unit="steps"
+                  description="Daily step count"
+                />
+                <NumberInput 
+                  label="Weight" 
+                  field="weight" 
+                  placeholder="70.0" 
+                  unit="kg"
+                  description="Current body weight"
+                />
+                <div className="lg:col-span-2">
+                  <RangeInput 
+                    label="Stress Level" 
+                    field="stres" 
+                    color="accent"
+                    description="How stressed or anxious did you feel?"
+                  />
                 </div>
               </div>
             </div>
@@ -460,36 +551,102 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
 
           {/* Mental States */}
           {activeSection === 'mental' && (
-            <div className="card p-8">
+            <div className="card p-8 space-y-8">
               <h3 className="section-subheader flex items-center space-x-2">
                 <BeakerIcon className="h-5 w-5 text-green-600" />
-                <span>Mental States</span>
+                <span>Mental States (1-5 Scale)</span>
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <RangeInput label="Health State" field="statehealth" color="success" />
-                <RangeInput label="Relationship" field="staterelationship" color="accent" />
-                <RangeInput label="Self-esteem" field="stateselfesteem" color="primary" />
-                <RangeInput label="Intelligence" field="stateinteligence" color="primary" />
-                <RangeInput label="Social Skills" field="statesocialskill" color="success" />
-                <RangeInput label="Immersion" field="stateimmerse" color="accent" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <RangeInput 
+                  label="Health State" 
+                  field="statehealth" 
+                  color="success"
+                  description="How healthy did you feel physically?"
+                />
+                <RangeInput 
+                  label="Relationship" 
+                  field="staterelationship" 
+                  color="accent"
+                  description="Quality of your relationships today"
+                />
+                <RangeInput 
+                  label="Self-esteem" 
+                  field="stateselfesteem" 
+                  color="primary"
+                  description="How confident and positive did you feel?"
+                />
+                <RangeInput 
+                  label="Mental Clarity" 
+                  field="stateinteligence" 
+                  color="primary"
+                  description="How clear and sharp was your thinking?"
+                />
+                <RangeInput 
+                  label="Social Connection" 
+                  field="statesocialskill" 
+                  color="success"
+                  description="How well did you connect with others?"
+                />
+                <RangeInput 
+                  label="Flow State" 
+                  field="stateimmerse" 
+                  color="accent"
+                  description="How immersed and focused were you in activities?"
+                />
               </div>
             </div>
           )}
 
           {/* Diet & Substances */}
           {activeSection === 'diet' && (
-            <div className="card p-8">
+            <div className="card p-8 space-y-8">
               <h3 className="section-subheader flex items-center space-x-2">
                 <ScaleIcon className="h-5 w-5 text-orange-600" />
                 <span>Diet & Substances</span>
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <NumberInput label="Calories" field="dietkcal" placeholder="2000" unit="kcal" />
-                <NumberInput label="Carbs" field="dietcarbs" placeholder="200" unit="g" />
-                <NumberInput label="Protein" field="dietprotein" placeholder="80" unit="g" />
-                <NumberInput label="Fats" field="dietfats" placeholder="60" unit="g" />
-                <NumberInput label="Stimulants" field="stimmg" placeholder="0" unit="mg" />
-                <NumberInput label="Alcohol" field="alcohol" placeholder="0" unit="units" />
+                <NumberInput 
+                  label="Calories" 
+                  field="dietkcal" 
+                  placeholder="2000" 
+                  unit="kcal"
+                  description="Total calories consumed"
+                />
+                <NumberInput 
+                  label="Carbs" 
+                  field="dietcarbs" 
+                  placeholder="200" 
+                  unit="g"
+                  description="Carbohydrates in grams"
+                />
+                <NumberInput 
+                  label="Protein" 
+                  field="dietprotein" 
+                  placeholder="80" 
+                  unit="g"
+                  description="Protein in grams"
+                />
+                <NumberInput 
+                  label="Fats" 
+                  field="dietfats" 
+                  placeholder="60" 
+                  unit="g"
+                  description="Fats in grams"
+                />
+                <NumberInput 
+                  label="Stimulants" 
+                  field="stimmg" 
+                  placeholder="0" 
+                  unit="mg"
+                  description="Caffeine or other stimulants"
+                />
+                <NumberInput 
+                  label="Alcohol" 
+                  field="alcohol" 
+                  placeholder="0" 
+                  unit="units"
+                  description="Alcohol consumption"
+                />
               </div>
             </div>
           )}
@@ -497,7 +654,7 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
           {/* Submit Section */}
           <div className="flex justify-center space-x-4">
             {success ? (
-              <div className="flex items-center space-x-2 text-green-600 bg-green-50 px-6 py-3 rounded-lg border border-green-200">
+              <div className="flex items-center space-x-2 text-green-600 bg-green-50 px-6 py-3 rounded-xl border border-green-200 shadow-soft">
                 <CheckIcon className="h-5 w-5" />
                 <span className="font-medium">Entry saved successfully!</span>
               </div>
@@ -508,9 +665,9 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
                   onClick={() => {
                     setFormData({
                       date: new Date().toISOString().split('T')[0],
-                      subjectivesynchro: 5,
-                      subjectivemood: 5,
-                      productivity: 5
+                      subjectivesynchro: 3,
+                      subjectivemood: 3,
+                      productivity: 3
                     })
                     setValidationErrors({})
                     setActiveSection('basic')
@@ -523,7 +680,7 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`btn-primary ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`btn-primary ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 transform transition-all duration-200'}`}
                 >
                   <PlusIcon className="h-5 w-5 mr-2" />
                   {loading ? 'Saving...' : 'Save Entry'}

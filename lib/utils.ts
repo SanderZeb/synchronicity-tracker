@@ -1,5 +1,19 @@
 import { SynchroData } from './supabase'
-import { format, parseISO, isValid } from 'date-fns'
+import { format, parseISO, isValid, startOfWeek, startOfMonth, startOfYear, getDay } from 'date-fns'
+
+/**
+ * Convert sleep from minutes to hours for display
+ */
+export const convertSleepToHours = (minutes: number | undefined): number => {
+  return minutes ? minutes / 60 : 0
+}
+
+/**
+ * Convert sleep from hours to minutes for storage
+ */
+export const convertSleepToMinutes = (hours: number | undefined): number => {
+  return hours ? hours * 60 : 0
+}
 
 /**
  * Format date string to readable format
@@ -16,55 +30,63 @@ export const formatDate = (dateStr: string | undefined, formatString: string = '
 }
 
 /**
- * Calculate average for a numeric field across data entries (fixed for new schema)
+ * Calculate average for a numeric field across data entries (with sleep conversion)
  */
 export const calculateAverage = (data: SynchroData[], field: keyof SynchroData): number => {
   const validEntries = data.filter(d => d[field] != null)
   if (validEntries.length === 0) return 0
   
-  const sum = validEntries.reduce((acc, d) => acc + (d[field] as number || 0), 0)
+  const sum = validEntries.reduce((acc, d) => {
+    const value = d[field] as number || 0
+    // Convert sleep from minutes to hours for calculation
+    if (field === 'sleepavg') {
+      return acc + convertSleepToHours(value)
+    }
+    return acc + value
+  }, 0)
   return sum / validEntries.length
 }
 
 /**
- * Get color class based on intensity/value for the new design system
+ * Get color class based on intensity/value for the new 1-5 scale
  */
-export const getIntensityColor = (value: number | undefined, max: number = 10): string => {
+export const getIntensityColor = (value: number | undefined, max: number = 5): string => {
   if (!value) return 'bg-gray-100 text-text-muted'
   const intensity = value / max
   
-  if (intensity >= 0.8) return 'bg-green-500 text-white'
-  if (intensity >= 0.6) return 'bg-green-400 text-white'
-  if (intensity >= 0.4) return 'bg-yellow-400 text-gray-800'
-  if (intensity >= 0.2) return 'bg-orange-400 text-white'
-  return 'bg-red-400 text-white'
+  if (intensity >= 0.9) return 'bg-green-600 text-white'
+  if (intensity >= 0.7) return 'bg-green-500 text-white'
+  if (intensity >= 0.5) return 'bg-yellow-500 text-gray-800'
+  if (intensity >= 0.3) return 'bg-orange-500 text-white'
+  return 'bg-red-500 text-white'
 }
 
 /**
- * Get text color class based on value for new design system
+ * Get text color class based on value for new 1-5 scale
  */
-export const getValueTextColor = (value: number | undefined, max: number = 10): string => {
+export const getValueTextColor = (value: number | undefined, max: number = 5): string => {
   if (!value) return 'text-text-muted'
   const intensity = value / max
   
-  if (intensity >= 0.8) return 'text-green-600'
-  if (intensity >= 0.6) return 'text-green-500'
-  if (intensity >= 0.4) return 'text-yellow-600'
-  if (intensity >= 0.2) return 'text-orange-500'
+  if (intensity >= 0.9) return 'text-green-600'
+  if (intensity >= 0.7) return 'text-green-500'
+  if (intensity >= 0.5) return 'text-yellow-600'
+  if (intensity >= 0.3) return 'text-orange-500'
   return 'text-red-500'
 }
 
 /**
- * Calculate streak of consecutive days above threshold (fixed field names)
+ * Calculate streak of consecutive days above threshold (updated for 1-5 scale)
  */
-export const calculateStreak = (data: SynchroData[], field: keyof SynchroData, threshold: number = 5): number => {
+export const calculateStreak = (data: SynchroData[], field: keyof SynchroData, threshold: number = 3): number => {
   const sortedData = data
     .filter(d => d.date && d[field] != null)
     .sort((a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime())
   
   let streak = 0
   for (const entry of sortedData) {
-    if ((entry[field] as number || 0) >= threshold) {
+    const value = field === 'sleepavg' ? convertSleepToHours(entry[field] as number) : entry[field] as number
+    if ((value || 0) >= threshold) {
       streak++
     } else {
       break
@@ -74,7 +96,7 @@ export const calculateStreak = (data: SynchroData[], field: keyof SynchroData, t
 }
 
 /**
- * Calculate trend between two periods (fixed field names)
+ * Calculate trend between two periods (updated for 1-5 scale)
  */
 export const calculateTrend = (data: SynchroData[], field: keyof SynchroData, daysRecent: number = 7): number => {
   const sortedData = data
@@ -91,7 +113,7 @@ export const calculateTrend = (data: SynchroData[], field: keyof SynchroData, da
 }
 
 /**
- * Get most common synchronicity times (fixed for new schema)
+ * Get most common synchronicity times
  */
 export const getTopSynchroTimes = (data: SynchroData[], limit: number = 5) => {
   const timeColumns = [
@@ -112,7 +134,7 @@ export const getTopSynchroTimes = (data: SynchroData[], limit: number = 5) => {
 }
 
 /**
- * Generate weekly pattern data (fixed field names)
+ * Generate weekly pattern data (updated for 1-5 scale)
  */
 export const getWeeklyPattern = (data: SynchroData[], field: keyof SynchroData = 'subjectivesynchro') => {
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -131,19 +153,134 @@ export const getWeeklyPattern = (data: SynchroData[], field: keyof SynchroData =
 }
 
 /**
+ * Enhanced heatmap data aggregation functions
+ */
+export const aggregateDataByWeeks = (data: SynchroData[]) => {
+  const weeklyData = new Map<string, { sum: number; count: number }>()
+  
+  data.filter(d => d.date && d.subjectivesynchro != null).forEach(d => {
+    const date = new Date(d.date!)
+    const weekStart = startOfWeek(date, { weekStartsOn: 1 })
+    const weekKey = format(weekStart, 'yyyy-MM-dd')
+    
+    if (!weeklyData.has(weekKey)) {
+      weeklyData.set(weekKey, { sum: 0, count: 0 })
+    }
+    
+    const weekData = weeklyData.get(weekKey)!
+    weekData.sum += d.subjectivesynchro || 0
+    weekData.count++
+  })
+  
+  return Array.from(weeklyData.entries()).map(([week, data]) => ({
+    period: week,
+    average: data.count > 0 ? data.sum / data.count : 0,
+    count: data.count
+  }))
+}
+
+export const aggregateDataByMonths = (data: SynchroData[]) => {
+  const monthlyData = new Map<string, { sum: number; count: number }>()
+  
+  data.filter(d => d.date && d.subjectivesynchro != null).forEach(d => {
+    const date = new Date(d.date!)
+    const monthKey = format(startOfMonth(date), 'yyyy-MM')
+    
+    if (!monthlyData.has(monthKey)) {
+      monthlyData.set(monthKey, { sum: 0, count: 0 })
+    }
+    
+    const monthData = monthlyData.get(monthKey)!
+    monthData.sum += d.subjectivesynchro || 0
+    monthData.count++
+  })
+  
+  return Array.from(monthlyData.entries()).map(([month, data]) => ({
+    period: month,
+    average: data.count > 0 ? data.sum / data.count : 0,
+    count: data.count
+  }))
+}
+
+export const aggregateDataByYears = (data: SynchroData[]) => {
+  const yearlyData = new Map<string, { sum: number; count: number }>()
+  
+  data.filter(d => d.date && d.subjectivesynchro != null).forEach(d => {
+    const date = new Date(d.date!)
+    const yearKey = format(startOfYear(date), 'yyyy')
+    
+    if (!yearlyData.has(yearKey)) {
+      yearlyData.set(yearKey, { sum: 0, count: 0 })
+    }
+    
+    const yearData = yearlyData.get(yearKey)!
+    yearData.sum += d.subjectivesynchro || 0
+    yearData.count++
+  })
+  
+  return Array.from(yearlyData.entries()).map(([year, data]) => ({
+    period: year,
+    average: data.count > 0 ? data.sum / data.count : 0,
+    count: data.count
+  }))
+}
+
+export const aggregateDataByDayOfWeek = (data: SynchroData[]) => {
+  const dayData = new Array(7).fill(0).map(() => ({ sum: 0, count: 0 }))
+  const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+  
+  data.filter(d => d.day_of_the_week && d.subjectivesynchro != null).forEach(d => {
+    const dayIndex = dayNames.indexOf(d.day_of_the_week!)
+    if (dayIndex !== -1) {
+      dayData[dayIndex].sum += d.subjectivesynchro || 0
+      dayData[dayIndex].count++
+    }
+  })
+  
+  return dayData.map((data, index) => ({
+    period: dayNames[index],
+    average: data.count > 0 ? data.sum / data.count : 0,
+    count: data.count
+  }))
+}
+
+/**
  * Export data to CSV format
  */
 export const exportToCSV = (data: SynchroData[], filename?: string): void => {
   if (data.length === 0) return
   
-  const headers = Object.keys(data[0]).join(',')
+  // Create headers
+  const allKeys = new Set<string>()
+  data.forEach(row => {
+    Object.keys(row).forEach(key => allKeys.add(key))
+  })
+  
+  const headers = Array.from(allKeys).sort()
+  const csvHeaders = headers.join(',')
+  
+  // Create rows with proper sleep conversion for display
   const rows = data.map(row => 
-    Object.values(row).map(value => 
-      typeof value === 'string' ? `"${value}"` : value || ''
-    ).join(',')
+    headers.map(header => {
+      let value = row[header as keyof SynchroData]
+      
+      // Convert sleep from minutes to hours for export
+      if (header === 'sleepavg' && typeof value === 'number') {
+        value = convertSleepToHours(value)
+      }
+      
+      // Handle different data types
+      if (value === null || value === undefined) {
+        return ''
+      } else if (typeof value === 'string') {
+        return `"${value.replace(/"/g, '""')}"` // Escape quotes
+      } else {
+        return value.toString()
+      }
+    }).join(',')
   )
   
-  const csvContent = [headers, ...rows].join('\n')
+  const csvContent = [csvHeaders, ...rows].join('\n')
   downloadFile(csvContent, filename || `synchronicity-data-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv')
 }
 
@@ -151,7 +288,13 @@ export const exportToCSV = (data: SynchroData[], filename?: string): void => {
  * Export data to JSON format
  */
 export const exportToJSON = (data: SynchroData[], filename?: string): void => {
-  const jsonContent = JSON.stringify(data, null, 2)
+  // Convert sleep values for export
+  const exportData = data.map(entry => ({
+    ...entry,
+    sleepavg: entry.sleepavg ? convertSleepToHours(entry.sleepavg) : entry.sleepavg
+  }))
+  
+  const jsonContent = JSON.stringify(exportData, null, 2)
   downloadFile(jsonContent, filename || `synchronicity-data-${new Date().toISOString().split('T')[0]}.json`, 'application/json')
 }
 
@@ -169,7 +312,7 @@ const downloadFile = (content: string, filename: string, contentType: string): v
 }
 
 /**
- * Validate form data (updated for new schema)
+ * Validate form data (updated for 1-5 scale)
  */
 export const validateSynchroData = (data: Partial<SynchroData>): { isValid: boolean; errors: string[] } => {
   const errors: string[] = []
@@ -178,20 +321,23 @@ export const validateSynchroData = (data: Partial<SynchroData>): { isValid: bool
     errors.push('Date is required')
   }
   
-  if (data.subjectivesynchro != null && (data.subjectivesynchro < 0 || data.subjectivesynchro > 10)) {
-    errors.push('Synchronicity level must be between 0 and 10')
-  }
+  // Validate 1-5 scale fields
+  const scaleFields: (keyof SynchroData)[] = [
+    'subjectivesynchro', 'subjectivemood', 'productivity', 'statehealth', 
+    'staterelationship', 'stateselfesteem', 'stateinteligence', 
+    'statesocialskill', 'stateimmerse', 'stres'
+  ]
   
-  if (data.subjectivemood != null && (data.subjectivemood < 0 || data.subjectivemood > 10)) {
-    errors.push('Mood must be between 0 and 10')
-  }
+  scaleFields.forEach(field => {
+    const value = data[field] as number
+    if (value != null && (value < 1 || value > 5)) {
+      errors.push(`${String(field)} must be between 1 and 5`)
+    }
+  })
   
-  if (data.productivity != null && (data.productivity < 0 || data.productivity > 10)) {
-    errors.push('Productivity must be between 0 and 10')
-  }
-  
-  if (data.sleepavg != null && (data.sleepavg < 0 || data.sleepavg > 24)) {
-    errors.push('Sleep hours must be between 0 and 24')
+  // Sleep validation (hours)
+  if (data.sleepavg != null && (data.sleepavg < 0 || data.sleepavg > 16)) {
+    errors.push('Sleep hours must be between 0 and 16')
   }
   
   return {
@@ -201,7 +347,7 @@ export const validateSynchroData = (data: Partial<SynchroData>): { isValid: bool
 }
 
 /**
- * Calculate synchronicity sum from time slots (updated for new schema)
+ * Calculate synchronicity sum from time slots
  */
 export const calculateSynchroSum = (data: Partial<SynchroData>): number => {
   const timeSlots = [
@@ -217,32 +363,32 @@ export const calculateSynchroSum = (data: Partial<SynchroData>): number => {
 }
 
 /**
- * Get insight text based on value
+ * Get insight text based on value (updated for 1-5 scale)
  */
 export const getInsightText = (value: number, type: 'synchronicity' | 'mood' | 'productivity'): string => {
-  const level = value >= 8 ? 'high' : value >= 6 ? 'good' : value >= 4 ? 'moderate' : value >= 2 ? 'low' : 'very low'
+  const level = value >= 4.5 ? 'excellent' : value >= 3.5 ? 'good' : value >= 2.5 ? 'moderate' : value >= 1.5 ? 'low' : 'very low'
   
   const insights = {
     synchronicity: {
-      'high': 'Highly attuned to patterns',
-      'good': 'Strong pattern awareness',
-      'moderate': 'Developing awareness',
+      'excellent': 'Highly attuned to cosmic patterns',
+      'good': 'Strong synchronicity awareness',
+      'moderate': 'Developing pattern recognition',
       'low': 'Limited pattern perception',
       'very low': 'Beginning awareness journey'
     },
     mood: {
-      'high': 'Excellent emotional state',
+      'excellent': 'Exceptional emotional state',
       'good': 'Positive well-being',
-      'moderate': 'Balanced state',
-      'low': 'Some challenges',
-      'very low': 'Significant concerns'
+      'moderate': 'Balanced emotional state',
+      'low': 'Some emotional challenges',
+      'very low': 'Significant emotional concerns'
     },
     productivity: {
-      'high': 'Exceptionally productive',
-      'good': 'Strong productivity',
+      'excellent': 'Peak performance achieved',
+      'good': 'High productivity levels',
       'moderate': 'Steady productivity',
       'low': 'Productivity challenges',
-      'very low': 'Significant issues'
+      'very low': 'Significant focus issues'
     }
   }
   
@@ -250,7 +396,7 @@ export const getInsightText = (value: number, type: 'synchronicity' | 'mood' | '
 }
 
 /**
- * Generate color palette for charts (updated for new design system)
+ * Generate color palette for charts
  */
 export const getChartColors = () => ({
   primary: '#3399e6',
@@ -258,24 +404,32 @@ export const getChartColors = () => ({
   success: '#22c55e',
   warning: '#f59e0b',
   error: '#ef4444',
-  muted: '#6b7280'
+  muted: '#6b7280',
+  purple: '#8b5cf6'
 })
 
 /**
- * Format number with appropriate precision
+ * Format number with appropriate precision (with special handling for sleep)
  */
-export const formatNumber = (value: number | undefined, decimals: number = 1): string => {
+export const formatNumber = (value: number | undefined, decimals: number = 1, field?: string): string => {
   if (value == null) return 'N/A'
+  
+  // Special formatting for sleep (show as hours)
+  if (field === 'sleepavg') {
+    const hours = convertSleepToHours(value)
+    return `${hours.toFixed(1)}h`
+  }
+  
   return value.toFixed(decimals)
 }
 
 /**
- * Get status color based on value and thresholds
+ * Get status color based on value and thresholds (updated for 1-5 scale)
  */
 export const getStatusColor = (value: number | undefined, type: 'dot' | 'text' | 'bg' = 'dot'): string => {
   if (value == null) return type === 'dot' ? 'bg-gray-300' : type === 'text' ? 'text-text-muted' : 'bg-gray-100'
   
-  const level = value >= 7 ? 'high' : value >= 5 ? 'medium' : value >= 3 ? 'low' : 'critical'
+  const level = value >= 4 ? 'high' : value >= 3 ? 'medium' : value >= 2 ? 'low' : 'critical'
   
   const colors = {
     dot: {
@@ -299,6 +453,36 @@ export const getStatusColor = (value: number | undefined, type: 'dot' | 'text' |
   }
   
   return colors[type][level]
+}
+
+/**
+ * Get scale description for 1-5 scale
+ */
+export const getScaleDescription = (value: number): string => {
+  if (value >= 4.5) return 'Excellent'
+  if (value >= 3.5) return 'Good'
+  if (value >= 2.5) return 'Moderate'
+  if (value >= 1.5) return 'Low'
+  return 'Very Low'
+}
+
+/**
+ * Calculate correlation between two arrays
+ */
+export const calculateCorrelation = (x: number[], y: number[]): number => {
+  if (x.length !== y.length || x.length === 0) return 0
+  
+  const n = x.length
+  const sumX = x.reduce((a, b) => a + b, 0)
+  const sumY = y.reduce((a, b) => a + b, 0)
+  const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0)
+  const sumXX = x.reduce((sum, xi) => sum + xi * xi, 0)
+  const sumYY = y.reduce((sum, yi) => sum + yi * yi, 0)
+  
+  const numerator = n * sumXY - sumX * sumY
+  const denominator = Math.sqrt((n * sumXX - sumX * sumX) * (n * sumYY - sumY * sumY))
+  
+  return denominator === 0 ? 0 : numerator / denominator
 }
 
 /**
@@ -341,25 +525,6 @@ export const isInRange = (value: number, min: number, max: number): boolean => {
  */
 export const getPercentage = (value: number, min: number, max: number): number => {
   return ((value - min) / (max - min)) * 100
-}
-
-/**
- * Calculate correlation between two arrays
- */
-export const calculateCorrelation = (x: number[], y: number[]): number => {
-  if (x.length !== y.length || x.length === 0) return 0
-  
-  const n = x.length
-  const sumX = x.reduce((a, b) => a + b, 0)
-  const sumY = y.reduce((a, b) => a + b, 0)
-  const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0)
-  const sumXX = x.reduce((sum, xi) => sum + xi * xi, 0)
-  const sumYY = y.reduce((sum, yi) => sum + yi * yi, 0)
-  
-  const numerator = n * sumXY - sumX * sumY
-  const denominator = Math.sqrt((n * sumXX - sumX * sumX) * (n * sumYY - sumY * sumY))
-  
-  return denominator === 0 ? 0 : numerator / denominator
 }
 
 /**

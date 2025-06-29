@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { SynchroData } from '../lib/supabase'
+import { convertSleepToHours, formatDate, getStatusColor, getScaleDescription } from '../lib/utils'
 import { 
   MagnifyingGlassIcon, 
   CalendarIcon,
@@ -13,7 +14,9 @@ import {
   ListBulletIcon,
   BoltIcon,
   HeartIcon,
-  MoonIcon
+  MoonIcon,
+  SunIcon,
+  ClockIcon
 } from '@heroicons/react/24/outline'
 import { format, parseISO } from 'date-fns'
 
@@ -54,7 +57,7 @@ export default function ViewSection({ data }: ViewSectionProps) {
       filtered = filtered.filter(d => d.date && d.date <= dateFilter.end)
     }
 
-    // Apply range filters
+    // Apply range filters (1-5 scale)
     filtered = filtered.filter(d => {
       const synchro = d.subjectivesynchro ?? 0
       const mood = d.subjectivemood ?? 0
@@ -91,6 +94,12 @@ export default function ViewSection({ data }: ViewSectionProps) {
           aVal = aVal.toLowerCase()
           bVal = bVal.toLowerCase()
         }
+      }
+
+      // Special handling for sleep (convert to hours for sorting)
+      if (sortField === 'sleepavg') {
+        aVal = convertSleepToHours(aVal as number)
+        bVal = convertSleepToHours(bVal as number)
       }
 
       const result = aVal < bVal ? -1 : aVal > bVal ? 1 : 0
@@ -138,7 +147,7 @@ export default function ViewSection({ data }: ViewSectionProps) {
     setSelectedEntries(new Set())
   }
 
-  const formatDate = (dateStr: string | undefined) => {
+  const formatDateDisplay = (dateStr: string | undefined) => {
     if (!dateStr) return 'N/A'
     try {
       return format(parseISO(dateStr), 'MMM dd, yyyy')
@@ -147,7 +156,7 @@ export default function ViewSection({ data }: ViewSectionProps) {
     }
   }
 
-  const getValueColor = (value: number | undefined, max: number = 10) => {
+  const getValueColor = (value: number | undefined, max: number = 5) => {
     if (!value) return 'text-text-muted'
     const intensity = value / max
     if (intensity >= 0.8) return 'text-green-600'
@@ -159,11 +168,11 @@ export default function ViewSection({ data }: ViewSectionProps) {
 
   const SortHeader = ({ field, children }: { field: SortField, children: React.ReactNode }) => (
     <th 
-      className="px-6 py-4 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-secondary transition-colors duration-200"
+      className="px-6 py-4 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-secondary transition-colors duration-200 group"
       onClick={() => handleSort(field)}
     >
       <div className="flex items-center space-x-1">
-        <span>{children}</span>
+        <span className="group-hover:text-text-primary transition-colors duration-200">{children}</span>
         {sortField === field && (
           <div className="flex flex-col">
             {sortDirection === 'asc' 
@@ -177,45 +186,76 @@ export default function ViewSection({ data }: ViewSectionProps) {
   )
 
   const EntryCard = ({ entry }: { entry: SynchroData }) => (
-    <div className="card-interactive group">
+    <div className="card-interactive group overflow-hidden">
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
             <CalendarIcon className="h-5 w-5 text-text-muted" />
-            <span className="font-semibold text-text-primary">{formatDate(entry.date)}</span>
+            <span className="font-semibold text-text-primary">{formatDateDisplay(entry.date)}</span>
           </div>
           <div className="flex items-center space-x-2">
             <input
               type="checkbox"
               checked={selectedEntries.has(entry.id!)}
               onChange={() => toggleSelectEntry(entry.id!)}
-              className="rounded text-primary-600 focus:ring-primary-500"
+              className="rounded text-primary-600 focus:ring-primary-500 focus:ring-2"
             />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="text-center p-3 bg-primary-50 rounded-lg">
-            <BoltIcon className="h-5 w-5 text-primary-600 mx-auto mb-1" />
-            <div className={`text-lg font-bold ${getValueColor(entry.subjectivesynchro)}`}>
+          <div className="text-center p-4 bg-gradient-to-br from-primary-50 to-primary-100 rounded-xl border border-primary-200">
+            <BoltIcon className="h-5 w-5 text-primary-600 mx-auto mb-2" />
+            <div className={`text-xl font-bold ${getValueColor(entry.subjectivesynchro, 5)}`}>
               {entry.subjectivesynchro?.toFixed(1) || 'N/A'}
             </div>
             <div className="text-xs text-text-muted">Synchronicity</div>
+            <div className="text-xs text-primary-600 font-medium mt-1">
+              {entry.subjectivesynchro ? getScaleDescription(entry.subjectivesynchro) : ''}
+            </div>
           </div>
           
-          <div className="text-center p-3 bg-green-50 rounded-lg">
-            <HeartIcon className="h-5 w-5 text-green-600 mx-auto mb-1" />
-            <div className={`text-lg font-bold ${getValueColor(entry.subjectivemood)}`}>
+          <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200">
+            <HeartIcon className="h-5 w-5 text-green-600 mx-auto mb-2" />
+            <div className={`text-xl font-bold ${getValueColor(entry.subjectivemood, 5)}`}>
               {entry.subjectivemood?.toFixed(1) || 'N/A'}
             </div>
             <div className="text-xs text-text-muted">Mood</div>
+            <div className="text-xs text-green-600 font-medium mt-1">
+              {entry.subjectivemood ? getScaleDescription(entry.subjectivemood) : ''}
+            </div>
           </div>
         </div>
 
-        <div className="flex justify-between items-center text-sm text-text-secondary">
-          <span className="badge badge-primary">Events: {entry.synchrosum || 0}</span>
-          <span>Sleep: {entry.sleepavg?.toFixed(1) || 'N/A'}h</span>
-          <span>{entry.day_of_the_week || 'N/A'}</span>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="text-center p-3 bg-gradient-to-br from-accent-50 to-accent-100 rounded-lg border border-accent-200">
+            <SunIcon className="h-4 w-4 text-accent-600 mx-auto mb-1" />
+            <div className={`text-lg font-bold ${getValueColor(entry.productivity, 5)}`}>
+              {entry.productivity?.toFixed(1) || 'N/A'}
+            </div>
+            <div className="text-xs text-text-muted">Productivity</div>
+          </div>
+          
+          <div className="text-center p-3 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+            <MoonIcon className="h-4 w-4 text-purple-600 mx-auto mb-1" />
+            <div className="text-lg font-bold text-purple-600">
+              {entry.sleepavg ? `${convertSleepToHours(entry.sleepavg).toFixed(1)}h` : 'N/A'}
+            </div>
+            <div className="text-xs text-text-muted">Sleep</div>
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center text-sm">
+          <div className="flex items-center space-x-2">
+            <span className="badge badge-primary flex items-center space-x-1">
+              <FireIcon className="h-3 w-3" />
+              <span>{entry.synchrosum || 0} events</span>
+            </span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <ClockIcon className="h-4 w-4 text-text-muted" />
+            <span className="text-text-secondary">{entry.day_of_the_week || 'N/A'}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -224,14 +264,14 @@ export default function ViewSection({ data }: ViewSectionProps) {
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <h2 className="section-header">Data Browser</h2>
+        <h2 className="section-header">Data Explorer</h2>
         <p className="text-text-secondary text-lg">
-          Explore and analyze your synchronicity records
+          Browse and analyze your synchronicity records (1-5 scale)
         </p>
       </div>
 
       {/* Enhanced Search and Filters */}
-      <div className="card p-6">
+      <div className="card p-6 shadow-soft">
         <div className="flex flex-col lg:flex-row gap-4 items-center">
           {/* Search */}
           <div className="flex-1 relative">
@@ -250,7 +290,7 @@ export default function ViewSection({ data }: ViewSectionProps) {
             <button
               onClick={() => setViewMode('cards')}
               className={`p-2 rounded transition-colors ${
-                viewMode === 'cards' ? 'bg-white shadow text-primary-600' : 'text-text-muted'
+                viewMode === 'cards' ? 'bg-white shadow text-primary-600' : 'text-text-muted hover:text-text-primary'
               }`}
             >
               <Squares2X2Icon className="h-4 w-4" />
@@ -258,7 +298,7 @@ export default function ViewSection({ data }: ViewSectionProps) {
             <button
               onClick={() => setViewMode('table')}
               className={`p-2 rounded transition-colors ${
-                viewMode === 'table' ? 'bg-white shadow text-primary-600' : 'text-text-muted'
+                viewMode === 'table' ? 'bg-white shadow text-primary-600' : 'text-text-muted hover:text-text-primary'
               }`}
             >
               <ListBulletIcon className="h-4 w-4" />
@@ -270,18 +310,21 @@ export default function ViewSection({ data }: ViewSectionProps) {
             onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
               showFilters 
-                ? 'bg-gradient-primary text-white shadow-soft' 
-                : 'bg-surface-secondary text-text-secondary hover:text-text-primary hover:bg-white'
+                ? 'bg-gradient-primary text-white shadow-medium' 
+                : 'bg-surface-secondary text-text-secondary hover:text-text-primary hover:bg-white hover:shadow-soft'
             }`}
           >
             <FunnelIcon className="h-5 w-5" />
             <span>Filters</span>
+            {Object.values(rangeFilters).some(v => v !== 1 && v !== 5) && (
+              <div className="w-2 h-2 bg-accent-400 rounded-full"></div>
+            )}
           </button>
         </div>
 
         {/* Advanced Filters */}
         {showFilters && (
-          <div className="mt-6 pt-6 border-t border-gray-200 space-y-4 fade-in">
+          <div className="mt-6 pt-6 border-t border-gray-200 space-y-6 fade-in">
             {/* Date Range */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -304,7 +347,7 @@ export default function ViewSection({ data }: ViewSectionProps) {
               </div>
             </div>
 
-            {/* Range Filters */}
+            {/* Range Filters for 1-5 Scale */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <label className="block text-sm font-medium text-text-primary">
@@ -313,8 +356,8 @@ export default function ViewSection({ data }: ViewSectionProps) {
                 <div className="flex items-center space-x-3">
                   <input
                     type="range"
-                    min="0"
-                    max="10"
+                    min="1"
+                    max="5"
                     step="0.1"
                     value={rangeFilters.synchroMin}
                     onChange={(e) => setRangeFilters(prev => ({ ...prev, synchroMin: parseFloat(e.target.value) }))}
@@ -322,13 +365,17 @@ export default function ViewSection({ data }: ViewSectionProps) {
                   />
                   <input
                     type="range"
-                    min="0"
-                    max="10"
+                    min="1"
+                    max="5"
                     step="0.1"
                     value={rangeFilters.synchroMax}
                     onChange={(e) => setRangeFilters(prev => ({ ...prev, synchroMax: parseFloat(e.target.value) }))}
                     className="flex-1"
                   />
+                </div>
+                <div className="flex justify-between text-xs text-text-muted">
+                  <span>Very Low</span>
+                  <span>Very High</span>
                 </div>
               </div>
               
@@ -339,8 +386,8 @@ export default function ViewSection({ data }: ViewSectionProps) {
                 <div className="flex items-center space-x-3">
                   <input
                     type="range"
-                    min="0"
-                    max="10"
+                    min="1"
+                    max="5"
                     step="0.1"
                     value={rangeFilters.moodMin}
                     onChange={(e) => setRangeFilters(prev => ({ ...prev, moodMin: parseFloat(e.target.value) }))}
@@ -348,22 +395,26 @@ export default function ViewSection({ data }: ViewSectionProps) {
                   />
                   <input
                     type="range"
-                    min="0"
-                    max="10"
+                    min="1"
+                    max="5"
                     step="0.1"
                     value={rangeFilters.moodMax}
                     onChange={(e) => setRangeFilters(prev => ({ ...prev, moodMax: parseFloat(e.target.value) }))}
                     className="flex-1"
                   />
                 </div>
+                <div className="flex justify-between text-xs text-text-muted">
+                  <span>Very Low</span>
+                  <span>Very High</span>
+                </div>
               </div>
             </div>
             
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-3">
               <button
                 onClick={() => {
                   setDateFilter({ start: '', end: '' })
-                  setRangeFilters({ synchroMin: 0, synchroMax: 10, moodMin: 0, moodMax: 10 })
+                  setRangeFilters({ synchroMin: 1, synchroMax: 5, moodMin: 1, moodMax: 5 })
                   setSearchTerm('')
                 }}
                 className="btn-secondary text-sm"
@@ -373,7 +424,7 @@ export default function ViewSection({ data }: ViewSectionProps) {
               <select
                 value={itemsPerPage}
                 onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                className="px-3 py-1 border border-gray-300 rounded text-sm input-field"
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm input-field"
               >
                 <option value={10}>10 per page</option>
                 <option value={20}>20 per page</option>
@@ -388,7 +439,7 @@ export default function ViewSection({ data }: ViewSectionProps) {
         {selectedEntries.size > 0 && (
           <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
             <div className="text-sm text-text-secondary">
-              {selectedEntries.size} entries selected
+              <span className="font-medium text-text-primary">{selectedEntries.size}</span> entries selected
             </div>
             <div className="flex items-center space-x-2">
               <button
@@ -404,8 +455,10 @@ export default function ViewSection({ data }: ViewSectionProps) {
         {/* Results Summary */}
         <div className="mt-4 flex items-center justify-between text-sm text-text-secondary">
           <div>
-            Showing {paginatedData.length} of {filteredAndSortedData.length} entries
-            {filteredAndSortedData.length !== data.length && ` (filtered from ${data.length} total)`}
+            Showing <span className="font-medium text-text-primary">{paginatedData.length}</span> of <span className="font-medium text-text-primary">{filteredAndSortedData.length}</span> entries
+            {filteredAndSortedData.length !== data.length && (
+              <span className="text-text-muted"> (filtered from {data.length} total)</span>
+            )}
           </div>
           {filteredAndSortedData.length > itemsPerPage && (
             <button
@@ -420,7 +473,7 @@ export default function ViewSection({ data }: ViewSectionProps) {
 
       {/* Data Display */}
       {viewMode === 'table' ? (
-        <div className="card overflow-hidden">
+        <div className="card overflow-hidden shadow-soft">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-surface-secondary">
@@ -445,7 +498,7 @@ export default function ViewSection({ data }: ViewSectionProps) {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {paginatedData.map((entry) => (
-                  <tr key={entry.id} className="hover:bg-surface-secondary transition-colors duration-200">
+                  <tr key={entry.id} className="hover:bg-surface-secondary transition-colors duration-200 group">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <input
                         type="checkbox"
@@ -457,7 +510,7 @@ export default function ViewSection({ data }: ViewSectionProps) {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
                       <div className="flex items-center space-x-2">
                         <CalendarIcon className="h-4 w-4 text-text-muted" />
-                        <span className="font-medium">{formatDate(entry.date)}</span>
+                        <span className="font-medium">{formatDateDisplay(entry.date)}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
@@ -465,30 +518,30 @@ export default function ViewSection({ data }: ViewSectionProps) {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex items-center space-x-2">
-                        <div className={`w-3 h-3 rounded-full ${
-                          (entry.subjectivesynchro || 0) >= 7 ? 'bg-green-500' :
-                          (entry.subjectivesynchro || 0) >= 5 ? 'bg-yellow-500' :
-                          'bg-red-500'
-                        }`} />
-                        <span className={`font-medium ${getValueColor(entry.subjectivesynchro)}`}>
+                        <div className={`w-3 h-3 rounded-full ${getStatusColor(entry.subjectivesynchro, 'dot')}`} />
+                        <span className={`font-medium ${getValueColor(entry.subjectivesynchro, 5)}`}>
                           {entry.subjectivesynchro?.toFixed(1) || 'N/A'}
+                        </span>
+                        <span className="text-xs text-text-muted">
+                          {entry.subjectivesynchro ? `(${getScaleDescription(entry.subjectivesynchro)})` : ''}
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex items-center space-x-2">
-                        <div className={`w-3 h-3 rounded-full ${
-                          (entry.subjectivemood || 0) >= 7 ? 'bg-green-500' :
-                          (entry.subjectivemood || 0) >= 5 ? 'bg-yellow-500' :
-                          'bg-red-500'
-                        }`} />
-                        <span className={`font-medium ${getValueColor(entry.subjectivemood)}`}>
+                        <div className={`w-3 h-3 rounded-full ${getStatusColor(entry.subjectivemood, 'dot')}`} />
+                        <span className={`font-medium ${getValueColor(entry.subjectivemood, 5)}`}>
                           {entry.subjectivemood?.toFixed(1) || 'N/A'}
+                        </span>
+                        <span className="text-xs text-text-muted">
+                          {entry.subjectivemood ? `(${getScaleDescription(entry.subjectivemood)})` : ''}
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
-                      {entry.productivity?.toFixed(1) || 'N/A'}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span className={`font-medium ${getValueColor(entry.productivity, 5)}`}>
+                        {entry.productivity?.toFixed(1) || 'N/A'}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary font-semibold">
                       <span className="badge badge-accent">
@@ -498,7 +551,7 @@ export default function ViewSection({ data }: ViewSectionProps) {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
                       <div className="flex items-center space-x-1">
                         <MoonIcon className="h-4 w-4 text-purple-500" />
-                        <span>{entry.sleepavg?.toFixed(1) || 'N/A'}h</span>
+                        <span>{entry.sleepavg ? `${convertSleepToHours(entry.sleepavg).toFixed(1)}h` : 'N/A'}</span>
                       </div>
                     </td>
                   </tr>
@@ -517,11 +570,11 @@ export default function ViewSection({ data }: ViewSectionProps) {
 
       {/* Enhanced Pagination */}
       {totalPages > 1 && (
-        <div className="card p-6">
+        <div className="card p-6 shadow-soft">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <span className="text-sm text-text-primary">
-                Page {currentPage} of {totalPages}
+                Page <span className="font-medium">{currentPage}</span> of <span className="font-medium">{totalPages}</span>
               </span>
               <span className="text-sm text-text-muted">
                 ({filteredAndSortedData.length} total entries)
@@ -553,7 +606,7 @@ export default function ViewSection({ data }: ViewSectionProps) {
                     onClick={() => setCurrentPage(pageNum)}
                     className={`px-3 py-2 text-sm rounded-lg transition-colors ${
                       currentPage === pageNum
-                        ? 'bg-gradient-primary text-white'
+                        ? 'bg-gradient-primary text-white shadow-soft'
                         : 'bg-white border border-gray-300 hover:bg-surface-secondary'
                     }`}
                   >
@@ -584,15 +637,28 @@ export default function ViewSection({ data }: ViewSectionProps) {
       {paginatedData.length === 0 && (
         <div className="text-center py-20">
           <div className="relative mb-8">
-            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
-              <EyeIcon className="h-12 w-12 text-text-muted" />
+            <div className="w-32 h-32 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center mx-auto shadow-soft">
+              <EyeIcon className="h-16 w-16 text-text-muted" />
             </div>
+            <div className="absolute inset-0 w-32 h-32 bg-gray-200 rounded-2xl animate-pulse opacity-30 mx-auto" />
           </div>
-          <div className="space-y-3">
+          <div className="space-y-4">
             <h3 className="text-2xl font-semibold text-text-secondary">No entries found</h3>
             <p className="text-text-muted text-lg max-w-md mx-auto">
               Try adjusting your search or filter criteria to find matching entries.
             </p>
+            <div className="mt-6">
+              <button
+                onClick={() => {
+                  setSearchTerm('')
+                  setDateFilter({ start: '', end: '' })
+                  setRangeFilters({ synchroMin: 1, synchroMax: 5, moodMin: 1, moodMax: 5 })
+                }}
+                className="btn-primary"
+              >
+                Clear All Filters
+              </button>
+            </div>
           </div>
         </div>
       )}
