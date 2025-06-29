@@ -481,7 +481,10 @@ export const calculateCorrelation = (x: number[], y: number[]): number => {
   const n = x.length
   const sumX = x.reduce((a, b) => a + b, 0)
   const sumY = y.reduce((a, b) => a + b, 0)
-  const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0)
+  const sumXY = x.reduce((sum, xi, i) => {
+    const yi = y[i]
+    return yi !== undefined ? sum + xi * yi : sum
+  }, 0)
   const sumXX = x.reduce((sum, xi) => sum + xi * xi, 0)
   const sumYY = y.reduce((sum, yi) => sum + yi * yi, 0)
   
