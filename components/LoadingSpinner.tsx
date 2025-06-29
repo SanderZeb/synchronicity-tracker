@@ -32,7 +32,7 @@ export default function LoadingSpinner({
   if (variant === 'simple') {
     return (
       <div className="flex items-center justify-center space-x-2">
-        <div className={`${sizeClasses[size]} border-2 border-cosmic-300 border-t-cosmic-600 rounded-full animate-spin`} />
+        <div className={`${sizeClasses[size]} border-2 border-primary-300 border-t-primary-600 rounded-full animate-spin`} />
         {message && <span className={`${textSizeClasses[size]} text-gray-600`}>{message}</span>}
       </div>
     )
@@ -43,21 +43,21 @@ export default function LoadingSpinner({
       {variant === 'cosmic' ? (
         <div className="relative">
           {/* Main spinner */}
-          <SparklesIcon className={`${sizeClasses[size]} text-cosmic-500 animate-spin`} />
+          <SparklesIcon className={`${sizeClasses[size]} text-primary-500 animate-spin`} />
           
           {/* Pulsing background effect */}
-          <div className={`absolute inset-0 ${sizeClasses[size]} text-synchro-400 animate-ping opacity-30`}>
+          <div className={`absolute inset-0 ${sizeClasses[size]} text-accent-400 animate-ping opacity-30`}>
             <SparklesIcon className={sizeClasses[size]} />
           </div>
           
           {/* Rotating rings */}
-          <div className={`absolute inset-0 ${sizeClasses[size]} border-2 border-transparent border-t-cosmic-400 border-r-synchro-400 rounded-full animate-spin`} 
+          <div className={`absolute inset-0 ${sizeClasses[size]} border-2 border-transparent border-t-primary-400 border-r-accent-400 rounded-full animate-spin`} 
                style={{ animationDuration: '2s', animationDirection: 'reverse' }} />
         </div>
       ) : (
         <div className="relative">
           {/* Synchro variant with gradient */}
-          <div className={`${sizeClasses[size]} bg-gradient-to-r from-synchro-400 to-cosmic-400 rounded-full animate-pulse`} />
+          <div className={`${sizeClasses[size]} bg-gradient-to-r from-accent-400 to-primary-400 rounded-full animate-pulse`} />
           <SparklesIcon className={`absolute inset-0 ${sizeClasses[size]} text-white animate-spin`} />
         </div>
       )}
@@ -79,7 +79,7 @@ export default function LoadingSpinner({
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className="w-2 h-2 bg-cosmic-400 rounded-full animate-pulse"
+            className="w-2 h-2 bg-primary-400 rounded-full animate-pulse"
             style={{
               animationDelay: `${i * 0.2}s`,
               animationDuration: '1s'
@@ -111,7 +111,7 @@ export const LoadingOverlay = ({
         <LoadingSpinner 
           size="lg" 
           message={message} 
-          description={description}
+          {...(description && { description })}
           variant="cosmic"
         />
       </div>
@@ -128,11 +128,11 @@ export const LoadingCard = ({
 }) => (
   <div className={`bg-white rounded-xl border border-gray-200 p-6 ${className}`}>
     <div className="space-y-4">
-      <div className={`h-4 bg-gray-200 rounded w-3/4 ${animate ? 'shimmer' : ''}`} />
-      <div className={`h-8 bg-gray-200 rounded w-1/2 ${animate ? 'shimmer' : ''}`} />
+      <div className={`h-4 bg-gray-200 rounded w-3/4 ${animate ? 'skeleton' : ''}`} />
+      <div className={`h-8 bg-gray-200 rounded w-1/2 ${animate ? 'skeleton' : ''}`} />
       <div className="space-y-2">
-        <div className={`h-3 bg-gray-200 rounded ${animate ? 'shimmer' : ''}`} />
-        <div className={`h-3 bg-gray-200 rounded w-5/6 ${animate ? 'shimmer' : ''}`} />
+        <div className={`h-3 bg-gray-200 rounded ${animate ? 'skeleton' : ''}`} />
+        <div className={`h-3 bg-gray-200 rounded w-5/6 ${animate ? 'skeleton' : ''}`} />
       </div>
     </div>
   </div>
