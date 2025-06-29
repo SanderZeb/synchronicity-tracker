@@ -1,5 +1,5 @@
 import { SynchroData } from './supabase'
-import { format, parseISO, isValid, startOfWeek, startOfMonth, startOfYear, getDay } from 'date-fns'
+import { format, parseISO, isValid, startOfWeek, startOfMonth, startOfYear } from 'date-fns'
 
 /**
  * Convert sleep from minutes to hours for display
