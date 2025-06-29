@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { SynchroData } from '../lib/supabase'
-import { convertSleepToHours, formatDate, getStatusColor, getScaleDescription } from '../lib/utils'
+import { convertSleepToHours, getStatusColor, getScaleDescription } from '../lib/utils'
 import { 
   MagnifyingGlassIcon, 
   CalendarIcon,
