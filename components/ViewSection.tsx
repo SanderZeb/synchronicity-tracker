@@ -16,7 +16,8 @@ import {
   HeartIcon,
   MoonIcon,
   SunIcon,
-  ClockIcon
+  ClockIcon,
+  FireIcon
 } from '@heroicons/react/24/outline'
 import { format, parseISO } from 'date-fns'
 

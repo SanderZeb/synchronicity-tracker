@@ -21,7 +21,6 @@ import {
   ChartBarIcon,
   FireIcon,
   HeartIcon,
-  BoltIcon,
   ClockIcon,
   ArrowTrendingUpIcon,
   CalendarIcon,
