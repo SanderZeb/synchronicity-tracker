@@ -270,10 +270,12 @@ export const convertFromDisplay = (data: SynchroDataDisplay): Partial<SynchroDat
     dietfats: data.fats
   }
 
-  // Add time slots
+  // Add time slots with proper type handling
   if (data.timeSlots) {
     Object.entries(data.timeSlots).forEach(([time, value]) => {
-      dbData[time as keyof SynchroData] = value
+      // Create a properly typed update object for time slots
+      const timeSlotUpdate = { [time]: value } as Partial<SynchroData>
+      Object.assign(dbData, timeSlotUpdate)
     })
   }
 
