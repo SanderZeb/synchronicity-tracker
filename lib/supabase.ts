@@ -118,52 +118,52 @@ export interface SynchroData {
   day_of_the_week?: string
 }
 
-// Helper interface for display purposes with camelCase
+// Helper interface for display purposes with camelCase - FIXED for exactOptionalPropertyTypes
 export interface SynchroDataDisplay {
-  id?: number
-  date?: string
-  dayOfWeek?: string
+  id?: number | undefined
+  date?: string | undefined
+  dayOfWeek?: string | undefined
   
   // Time slots
-  timeSlots?: Record<string, number>
+  timeSlots?: Record<string, number> | undefined
   
   // Main metrics
-  synchroSum?: number
-  subjectiveSynchro?: number
-  subjectiveMood?: number
-  productivity?: number
+  synchroSum?: number | undefined
+  subjectiveSynchro?: number | undefined
+  subjectiveMood?: number | undefined
+  productivity?: number | undefined
   
   // Health
-  heartRateDaily?: number
-  heartRateResting?: number
-  stepsPhone?: number
-  weight?: number
+  heartRateDaily?: number | undefined
+  heartRateResting?: number | undefined
+  stepsPhone?: number | undefined
+  weight?: number | undefined
   
   // Sleep
-  sleepAvg?: number
-  sleepQuality?: number
+  sleepAvg?: number | undefined
+  sleepQuality?: number | undefined
   
   // Mental states
-  stateHealth?: number
-  stateRelationship?: number
-  stateSelfEsteem?: number
-  stateIntelligence?: number
-  stateSocialSkill?: number
-  stateImmerse?: number
-  stress?: number
+  stateHealth?: number | undefined
+  stateRelationship?: number | undefined
+  stateSelfEsteem?: number | undefined
+  stateIntelligence?: number | undefined
+  stateSocialSkill?: number | undefined
+  stateImmerse?: number | undefined
+  stress?: number | undefined
   
   // Substances
-  stimulants?: number
-  alcohol?: number
+  stimulants?: number | undefined
+  alcohol?: number | undefined
   
   // Diet
-  calories?: number
-  carbs?: number
-  protein?: number
-  fats?: number
+  calories?: number | undefined
+  carbs?: number | undefined
+  protein?: number | undefined
+  fats?: number | undefined
   
   // Cosmic
-  moonPhase?: string
+  moonPhase?: string | undefined
 }
 
 // Database response types
@@ -197,21 +197,21 @@ export const convertToDisplay = (data: SynchroData): SynchroDataDisplay => {
   })
 
   // Convert moonphase number to string
-  const getMoonPhaseString = (phase?: number): string => {
-    if (!phase) return ''
+  const getMoonPhaseString = (phase?: number): string | undefined => {
+    if (!phase) return undefined
     const phases = [
       'New Moon', 'Waxing Crescent', 'First Quarter', 'Waxing Gibbous',
       'Full Moon', 'Waning Gibbous', 'Last Quarter', 'Waning Crescent'
     ]
     const index = Math.floor((phase / 360) * 8) % 8
-    return phases[index] || ''
+    return phases[index] || undefined
   }
 
   return {
     id: data.id,
     date: data.date,
     dayOfWeek: data.day_of_the_week,
-    timeSlots,
+    timeSlots: Object.keys(timeSlots).length > 0 ? timeSlots : undefined,
     synchroSum: data.synchrosum,
     subjectiveSynchro: data.subjectivesynchro,
     subjectiveMood: data.subjectivemood,
