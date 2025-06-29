@@ -20,102 +20,102 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 })
 
-// Updated interface to match exact database schema
+// Updated interface to match exact database schema - FIXED for exactOptionalPropertyTypes
 export interface SynchroData {
-  id?: number
-  date?: string // timestamp with time zone
+  id?: number | undefined
+  date?: string | undefined // timestamp with time zone
   
   // Time-based synchronicity columns (exact DB column names)
-  '01:01'?: number
-  '02:02'?: number
-  '03:03'?: number
-  '04:04'?: number
-  '05:05'?: number
-  '06:06'?: number
-  '07:07'?: number
-  '08:08'?: number
-  '09:09'?: number
-  '10:10'?: number
-  '11:11'?: number
-  '12:12'?: number
-  '13:13'?: number
-  '14:14'?: number
-  '15:15'?: number
-  '16:16'?: number
-  '17:17'?: number
-  '18:18'?: number
-  '19:19'?: number
-  '20:20'?: number
-  '21:21'?: number
-  '22:22'?: number
-  '23:23'?: number
-  '00:00'?: number
+  '01:01'?: number | undefined
+  '02:02'?: number | undefined
+  '03:03'?: number | undefined
+  '04:04'?: number | undefined
+  '05:05'?: number | undefined
+  '06:06'?: number | undefined
+  '07:07'?: number | undefined
+  '08:08'?: number | undefined
+  '09:09'?: number | undefined
+  '10:10'?: number | undefined
+  '11:11'?: number | undefined
+  '12:12'?: number | undefined
+  '13:13'?: number | undefined
+  '14:14'?: number | undefined
+  '15:15'?: number | undefined
+  '16:16'?: number | undefined
+  '17:17'?: number | undefined
+  '18:18'?: number | undefined
+  '19:19'?: number | undefined
+  '20:20'?: number | undefined
+  '21:21'?: number | undefined
+  '22:22'?: number | undefined
+  '23:23'?: number | undefined
+  '00:00'?: number | undefined
   
   // Main metrics (matching DB lowercase)
-  synchrosum?: number
-  subjectivesynchro?: number
-  subjectivemood?: number
-  productivity?: number
-  unlocks?: number
+  synchrosum?: number | undefined
+  subjectivesynchro?: number | undefined
+  subjectivemood?: number | undefined
+  productivity?: number | undefined
+  unlocks?: number | undefined
   
   // Health metrics
-  heartratedaily?: number
-  heartrateresting?: number
-  stepsphone?: number
-  weight?: number
-  skinproblems?: number
+  heartratedaily?: number | undefined
+  heartrateresting?: number | undefined
+  stepsphone?: number | undefined
+  weight?: number | undefined
+  skinproblems?: number | undefined
   
   // Sleep data
-  sleepphone?: number
-  sleepband?: number
-  sleepavg?: number
-  sleepdifference?: number
-  sleep_fallasleep_time?: number
-  sleepwakeupavg?: number
-  sleepwakeupband?: number
-  sleepwakeupphone?: number
-  sleepwakeupquality?: number
-  sleep_faalasleep_time?: number // Additional field from DB
+  sleepphone?: number | undefined
+  sleepband?: number | undefined
+  sleepavg?: number | undefined
+  sleepdifference?: number | undefined
+  sleep_fallasleep_time?: number | undefined
+  sleepwakeupavg?: number | undefined
+  sleepwakeupband?: number | undefined
+  sleepwakeupphone?: number | undefined
+  sleepwakeupquality?: number | undefined
+  sleep_faalasleep_time?: number | undefined // Additional field from DB
   
   // Mental states
-  statehealth?: number
-  staterelationship?: number
-  stateselfesteem?: number
-  stateinteligence?: number
-  statesocialskill?: number
-  stateimmerse?: number
-  stres?: number
-  workload?: number
+  statehealth?: number | undefined
+  staterelationship?: number | undefined
+  stateselfesteem?: number | undefined
+  stateinteligence?: number | undefined
+  statesocialskill?: number | undefined
+  stateimmerse?: number | undefined
+  stres?: number | undefined
+  workload?: number | undefined
   
   // Substances
-  stimmg?: number
-  stimsum?: number
-  methylphenidatetabs?: number
-  methylphenidatemg?: number
-  alcohol?: number
+  stimmg?: number | undefined
+  stimsum?: number | undefined
+  methylphenidatetabs?: number | undefined
+  methylphenidatemg?: number | undefined
+  alcohol?: number | undefined
   
   // Diet
-  dietkcal?: number
-  dietcarbs?: number
-  dietprotein?: number
-  dietfats?: number
+  dietkcal?: number | undefined
+  dietcarbs?: number | undefined
+  dietprotein?: number | undefined
+  dietfats?: number | undefined
   
   // Cosmic data
-  ageofmoon?: number
-  earthsundistance?: number
-  moonphase?: number // Changed to number to match DB (double precision)
+  ageofmoon?: number | undefined
+  earthsundistance?: number | undefined
+  moonphase?: number | undefined // Changed to number to match DB (double precision)
   
   // Other metrics
-  void?: number
-  ocount?: number
-  oquality?: number
-  subjectivemisses?: number
-  misssum?: number
-  singletrialmean?: number
-  singletrialsum?: number
-  luck?: number
-  weekcount?: number
-  day_of_the_week?: string
+  void?: number | undefined
+  ocount?: number | undefined
+  oquality?: number | undefined
+  subjectivemisses?: number | undefined
+  misssum?: number | undefined
+  singletrialmean?: number | undefined
+  singletrialsum?: number | undefined
+  luck?: number | undefined
+  weekcount?: number | undefined
+  day_of_the_week?: string | undefined
 }
 
 // Helper interface for display purposes with camelCase - FIXED for exactOptionalPropertyTypes

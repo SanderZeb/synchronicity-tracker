@@ -1,673 +1,486 @@
-import { createClient } from '@supabase/supabase-js'
-import { DatabaseError } from '../components/ErrorBoundary'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { SynchroData } from './supabase'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables. Please check your .env.local file.')
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true
-  },
-  global: {
-    headers: {
-      'X-Client-Info': 'synchronicity-tracker@2.0.0'
+/**
+ * Hook for managing local storage with SSR safety
+ */
+export function useLocalStorage<T>(
+  key: string,
+  initialValue: T
+): [T, (value: T | ((val: T) => T)) => void] {
+  const [storedValue, setStoredValue] = useState<T>(() => {
+    if (typeof window === 'undefined') {
+      return initialValue
     }
-  }
-})
-
-// Updated interface to match exact database schema
-export interface SynchroData {
-  id?: number
-  date?: string // timestamp with time zone
-  
-  // Time-based synchronicity columns (exact DB column names)
-  '01:01'?: number
-  '02:02'?: number
-  '03:03'?: number
-  '04:04'?: number
-  '05:05'?: number
-  '06:06'?: number
-  '07:07'?: number
-  '08:08'?: number
-  '09:09'?: number
-  '10:10'?: number
-  '11:11'?: number
-  '12:12'?: number
-  '13:13'?: number
-  '14:14'?: number
-  '15:15'?: number
-  '16:16'?: number
-  '17:17'?: number
-  '18:18'?: number
-  '19:19'?: number
-  '20:20'?: number
-  '21:21'?: number
-  '22:22'?: number
-  '23:23'?: number
-  '00:00'?: number
-  
-  // Main metrics (matching DB lowercase)
-  synchrosum?: number
-  subjectivesynchro?: number
-  subjectivemood?: number
-  productivity?: number
-  unlocks?: number
-  
-  // Health metrics
-  heartratedaily?: number
-  heartrateresting?: number
-  stepsphone?: number
-  weight?: number
-  skinproblems?: number
-  
-  // Sleep data
-  sleepphone?: number
-  sleepband?: number
-  sleepavg?: number
-  sleepdifference?: number
-  sleep_fallasleep_time?: number
-  sleepwakeupavg?: number
-  sleepwakeupband?: number
-  sleepwakeupphone?: number
-  sleepwakeupquality?: number
-  sleep_faalasleep_time?: number // Additional field from DB
-  
-  // Mental states
-  statehealth?: number
-  staterelationship?: number
-  stateselfesteem?: number
-  stateinteligence?: number
-  statesocialskill?: number
-  stateimmerse?: number
-  stres?: number
-  workload?: number
-  
-  // Substances
-  stimmg?: number
-  stimsum?: number
-  methylphenidatetabs?: number
-  methylphenidatemg?: number
-  alcohol?: number
-  
-  // Diet
-  dietkcal?: number
-  dietcarbs?: number
-  dietprotein?: number
-  dietfats?: number
-  
-  // Cosmic data
-  ageofmoon?: number
-  earthsundistance?: number
-  moonphase?: number // Changed to number to match DB (double precision)
-  
-  // Other metrics
-  void?: number
-  ocount?: number
-  oquality?: number
-  subjectivemisses?: number
-  misssum?: number
-  singletrialmean?: number
-  singletrialsum?: number
-  luck?: number
-  weekcount?: number
-  day_of_the_week?: string
-}
-
-// Helper interface for display purposes with camelCase - FIXED for exactOptionalPropertyTypes
-export interface SynchroDataDisplay {
-  id?: number | undefined
-  date?: string | undefined
-  dayOfWeek?: string | undefined
-  
-  // Time slots
-  timeSlots?: Record<string, number> | undefined
-  
-  // Main metrics
-  synchroSum?: number | undefined
-  subjectiveSynchro?: number | undefined
-  subjectiveMood?: number | undefined
-  productivity?: number | undefined
-  
-  // Health
-  heartRateDaily?: number | undefined
-  heartRateResting?: number | undefined
-  stepsPhone?: number | undefined
-  weight?: number | undefined
-  
-  // Sleep
-  sleepAvg?: number | undefined
-  sleepQuality?: number | undefined
-  
-  // Mental states
-  stateHealth?: number | undefined
-  stateRelationship?: number | undefined
-  stateSelfEsteem?: number | undefined
-  stateIntelligence?: number | undefined
-  stateSocialSkill?: number | undefined
-  stateImmerse?: number | undefined
-  stress?: number | undefined
-  
-  // Substances
-  stimulants?: number | undefined
-  alcohol?: number | undefined
-  
-  // Diet
-  calories?: number | undefined
-  carbs?: number | undefined
-  protein?: number | undefined
-  fats?: number | undefined
-  
-  // Cosmic
-  moonPhase?: string | undefined
-}
-
-// Database response types
-export interface DatabaseResponse<T> {
-  data: T | null
-  error: Error | null
-  count?: number
-}
-
-// Query options interface
-export interface QueryOptions {
-  orderBy?: keyof SynchroData
-  ascending?: boolean
-  limit?: number
-  offset?: number
-}
-
-// Helper function to convert DB data to display format
-export const convertToDisplay = (data: SynchroData): SynchroDataDisplay => {
-  const timeSlots: Record<string, number> = {}
-  const timeCols = [
-    '00:00', '01:01', '02:02', '03:03', '04:04', '05:05', '06:06', 
-    '07:07', '08:08', '09:09', '10:10', '11:11', '12:12',
-    '13:13', '14:14', '15:15', '16:16', '17:17', '18:18',
-    '19:19', '20:20', '21:21', '22:22', '23:23'
-  ]
-  
-  timeCols.forEach(time => {
-    const value = data[time as keyof SynchroData] as number
-    if (value !== undefined) timeSlots[time] = value
+    try {
+      const item = window.localStorage.getItem(key)
+      return item ? JSON.parse(item) : initialValue
+    } catch (error) {
+      console.warn(`Error reading localStorage key "${key}":`, error)
+      return initialValue
+    }
   })
 
-  // Convert moonphase number to string
-  const getMoonPhaseString = (phase?: number): string | undefined => {
-    if (!phase) return undefined
-    const phases = [
-      'New Moon', 'Waxing Crescent', 'First Quarter', 'Waxing Gibbous',
-      'Full Moon', 'Waning Gibbous', 'Last Quarter', 'Waning Crescent'
-    ]
-    const index = Math.floor((phase / 360) * 8) % 8
-    return phases[index] || undefined
-  }
+  const setValue = useCallback((value: T | ((val: T) => T)) => {
+    try {
+      const valueToStore = value instanceof Function ? value(storedValue) : value
+      setStoredValue(valueToStore)
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(key, JSON.stringify(valueToStore))
+      }
+    } catch (error) {
+      console.warn(`Error setting localStorage key "${key}":`, error)
+    }
+  }, [key, storedValue])
+
+  return [storedValue, setValue]
+}
+
+/**
+ * Hook for debouncing values
+ */
+export function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value)
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value)
+    }, delay)
+
+    return () => {
+      clearTimeout(handler)
+    }
+  }, [value, delay])
+
+  return debouncedValue
+}
+
+/**
+ * Hook for managing async operations
+ */
+export function useAsync<T, E = Error>() {
+  const [data, setData] = useState<T | null>(null)
+  const [error, setError] = useState<E | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  const execute = useCallback(async (asyncFunction: () => Promise<T>) => {
+    try {
+      setLoading(true)
+      setError(null)
+      const result = await asyncFunction()
+      setData(result)
+      return result
+    } catch (error) {
+      setError(error as E)
+      throw error
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  const reset = useCallback(() => {
+    setData(null)
+    setError(null)
+    setLoading(false)
+  }, [])
+
+  return { data, error, loading, execute, reset }
+}
+
+/**
+ * Hook for managing form state with validation
+ */
+export function useForm<T extends Record<string, any>>(
+  initialValues: T,
+  validationRules?: Partial<Record<keyof T, (value: any) => string | null>>
+) {
+  const [values, setValues] = useState<T>(initialValues)
+  const [errors, setErrors] = useState<Partial<Record<keyof T, string>>>({})
+  const [touched, setTouched] = useState<Partial<Record<keyof T, boolean>>>({})
+
+  const setValue = useCallback((field: keyof T, value: any) => {
+    setValues(prev => ({ ...prev, [field]: value }))
+    
+    // Clear error when field is modified
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors[field]
+        return newErrors
+      })
+    }
+  }, [errors])
+
+  const setFieldTouched = useCallback((field: keyof T) => {
+    setTouched(prev => ({ ...prev, [field]: true }))
+  }, [])
+
+  const validateField = useCallback((field: keyof T, value: any): string | null => {
+    if (validationRules?.[field]) {
+      return validationRules[field]!(value)
+    }
+    return null
+  }, [validationRules])
+
+  const validateForm = useCallback((): boolean => {
+    if (!validationRules) return true
+
+    const newErrors: Partial<Record<keyof T, string>> = {}
+    let isValid = true
+
+    Object.keys(values).forEach(key => {
+      const field = key as keyof T
+      const error = validateField(field, values[field])
+      if (error) {
+        newErrors[field] = error
+        isValid = false
+      }
+    })
+
+    setErrors(newErrors)
+    return isValid
+  }, [values, validateField, validationRules])
+
+  const reset = useCallback(() => {
+    setValues(initialValues)
+    setErrors({})
+    setTouched({})
+  }, [initialValues])
 
   return {
-    id: data.id,
-    date: data.date,
-    dayOfWeek: data.day_of_the_week,
-    timeSlots: Object.keys(timeSlots).length > 0 ? timeSlots : undefined,
-    synchroSum: data.synchrosum,
-    subjectiveSynchro: data.subjectivesynchro,
-    subjectiveMood: data.subjectivemood,
-    productivity: data.productivity,
-    heartRateDaily: data.heartratedaily,
-    heartRateResting: data.heartrateresting,
-    stepsPhone: data.stepsphone,
-    weight: data.weight,
-    sleepAvg: data.sleepavg,
-    sleepQuality: data.sleepwakeupquality,
-    stateHealth: data.statehealth,
-    stateRelationship: data.staterelationship,
-    stateSelfEsteem: data.stateselfesteem,
-    stateIntelligence: data.stateinteligence,
-    stateSocialSkill: data.statesocialskill,
-    stateImmerse: data.stateimmerse,
-    stress: data.stres,
-    stimulants: data.stimmg,
-    alcohol: data.alcohol,
-    calories: data.dietkcal,
-    carbs: data.dietcarbs,
-    protein: data.dietprotein,
-    fats: data.dietfats,
-    moonPhase: getMoonPhaseString(data.moonphase)
+    values,
+    errors,
+    touched,
+    setValue,
+    setFieldTouched,
+    validateForm,
+    reset,
+    isValid: Object.keys(errors).length === 0
   }
 }
 
-// Helper function to convert display format back to DB format
-export const convertFromDisplay = (data: SynchroDataDisplay): Partial<SynchroData> => {
-  const dbData: Partial<SynchroData> = {
-    id: data.id,
-    date: data.date,
-    day_of_the_week: data.dayOfWeek,
-    synchrosum: data.synchroSum,
-    subjectivesynchro: data.subjectiveSynchro,
-    subjectivemood: data.subjectiveMood,
-    productivity: data.productivity,
-    heartratedaily: data.heartRateDaily,
-    heartrateresting: data.heartRateResting,
-    stepsphone: data.stepsPhone,
-    weight: data.weight,
-    sleepavg: data.sleepAvg,
-    sleepwakeupquality: data.sleepQuality,
-    statehealth: data.stateHealth,
-    staterelationship: data.stateRelationship,
-    stateselfesteem: data.stateSelfEsteem,
-    stateinteligence: data.stateIntelligence,
-    statesocialskill: data.stateSocialSkill,
-    stateimmerse: data.stateImmerse,
-    stres: data.stress,
-    stimmg: data.stimulants,
-    alcohol: data.alcohol,
-    dietkcal: data.calories,
-    dietcarbs: data.carbs,
-    dietprotein: data.protein,
-    dietfats: data.fats
-  }
+/**
+ * Hook for managing pagination
+ */
+export function usePagination(totalItems: number, itemsPerPage: number = 20) {
+  const [currentPage, setCurrentPage] = useState(1)
+  const totalPages = Math.ceil(totalItems / itemsPerPage)
 
-  // Add time slots
-  if (data.timeSlots) {
-    Object.entries(data.timeSlots).forEach(([time, value]) => {
-      dbData[time as keyof SynchroData] = value
+  const nextPage = useCallback(() => {
+    setCurrentPage(prev => Math.min(prev + 1, totalPages))
+  }, [totalPages])
+
+  const prevPage = useCallback(() => {
+    setCurrentPage(prev => Math.max(prev - 1, 1))
+  }, [])
+
+  const goToPage = useCallback((page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)))
+  }, [totalPages])
+
+  const getPageNumbers = useCallback((maxVisible: number = 5) => {
+    const delta = Math.floor(maxVisible / 2)
+    const start = Math.max(1, currentPage - delta)
+    const end = Math.min(totalPages, start + maxVisible - 1)
+    
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i)
+  }, [currentPage, totalPages])
+
+  return {
+    currentPage,
+    totalPages,
+    nextPage,
+    prevPage,
+    goToPage,
+    getPageNumbers,
+    hasNext: currentPage < totalPages,
+    hasPrev: currentPage > 1,
+    startIndex: (currentPage - 1) * itemsPerPage,
+    endIndex: Math.min(currentPage * itemsPerPage, totalItems)
+  }
+}
+
+/**
+ * Hook for managing data filtering and sorting
+ */
+export function useDataFilter<T>(
+  data: T[],
+  initialFilters: Record<string, any> = {}
+) {
+  const [filters, setFilters] = useState(initialFilters)
+  const [sortField, setSortField] = useState<keyof T | null>(null)
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+
+  const filteredData = useCallback(() => {
+    return data.filter(item => {
+      return Object.entries(filters).every(([key, value]) => {
+        if (!value || value === '') return true
+        
+        const itemValue = item[key as keyof T]
+        
+        if (typeof value === 'string') {
+          return String(itemValue).toLowerCase().includes(value.toLowerCase())
+        }
+        
+        if (typeof value === 'object' && value.min !== undefined && value.max !== undefined) {
+          const numValue = Number(itemValue)
+          return numValue >= value.min && numValue <= value.max
+        }
+        
+        return itemValue === value
+      })
     })
-  }
+  }, [data, filters])
 
-  return dbData
-}
+  const sortedData = useCallback(() => {
+    const filtered = filteredData()
+    
+    if (!sortField) return filtered
+    
+    return [...filtered].sort((a, b) => {
+      const aVal = a[sortField]
+      const bVal = b[sortField]
+      
+      if (aVal == null && bVal == null) return 0
+      if (aVal == null) return 1
+      if (bVal == null) return -1
+      
+      let comparison = 0
+      if (aVal < bVal) comparison = -1
+      if (aVal > bVal) comparison = 1
+      
+      return sortDirection === 'desc' ? -comparison : comparison
+    })
+  }, [filteredData, sortField, sortDirection])
 
-// Helper function to handle database errors
-const handleDatabaseError = (error: any, operation: string): never => {
-  console.error(`Database error during ${operation}:`, error)
-  
-  if (error.code === 'PGRST301') {
-    throw new DatabaseError('Database connection failed. Please check your internet connection.')
-  }
-  
-  if (error.code === '23505') {
-    throw new DatabaseError('A record with this date already exists.')
-  }
-  
-  if (error.code === '23514') {
-    throw new DatabaseError('Invalid data provided. Please check your input values.')
-  }
-  
-  throw new DatabaseError(error.message || `Failed to ${operation}`)
-}
+  const updateFilter = useCallback((key: string, value: any) => {
+    setFilters(prev => ({ ...prev, [key]: value }))
+  }, [])
 
-/**
- * Fetch all synchronicity data with optional sorting and filtering
- * FIXED: Remove Supabase's default 1000 record limit by setting explicit high limit
- */
-export const fetchAllData = async (options: QueryOptions = {}): Promise<SynchroData[]> => {
-  try {
-    const {
-      orderBy = 'date',
-      ascending = false,
-      limit = 10000, // Set high limit to fetch all records (adjust if you have more than 10k records)
-      offset
-    } = options
+  const clearFilters = useCallback(() => {
+    setFilters(initialFilters)
+  }, [initialFilters])
 
-    let query = supabase
-      .from('synchrodata')
-      .select('*')
-      .order(orderBy, { ascending })
-      .limit(limit) // Always set a limit to override Supabase's default 1000
-
-    if (offset) {
-      query = query.range(offset, offset + limit - 1)
+  const toggleSort = useCallback((field: keyof T) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDirection('asc')
     }
+  }, [sortField])
 
-    const { data, error } = await query
-
-    if (error) {
-      handleDatabaseError(error, 'fetch all data')
-    }
-
-    return data || []
-  } catch (error) {
-    if (error instanceof DatabaseError) {
-      throw error
-    }
-    handleDatabaseError(error, 'fetch all data')
+  return {
+    filteredData: sortedData(),
+    filters,
+    sortField,
+    sortDirection,
+    updateFilter,
+    clearFilters,
+    toggleSort,
+    hasActiveFilters: Object.values(filters).some(value => value !== '' && value != null)
   }
 }
 
 /**
- * Alternative: Fetch all data using pagination to handle very large datasets
+ * Hook for managing window size
  */
-export const fetchAllDataPaginated = async (options: QueryOptions = {}): Promise<SynchroData[]> => {
-  try {
-    const {
-      orderBy = 'date',
-      ascending = false
-    } = options
+export function useWindowSize() {
+  const [windowSize, setWindowSize] = useState({
+    width: typeof window !== 'undefined' ? window.innerWidth : 0,
+    height: typeof window !== 'undefined' ? window.innerHeight : 0,
+  })
 
-    const pageSize = 1000
-    let allData: SynchroData[] = []
-    let page = 0
-    let hasMore = true
+  useEffect(() => {
+    if (typeof window === 'undefined') return
 
-    while (hasMore) {
-      const { data, error } = await supabase
-        .from('synchrodata')
-        .select('*')
-        .order(orderBy, { ascending })
-        .range(page * pageSize, (page + 1) * pageSize - 1)
+    function handleResize() {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      })
+    }
 
-      if (error) {
-        handleDatabaseError(error, 'fetch all data paginated')
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  return windowSize
+}
+
+/**
+ * Hook for detecting click outside element
+ */
+export function useClickOutside<T extends HTMLElement>(
+  handler: () => void
+) {
+  const ref = useRef<T>(null)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        handler()
       }
+    }
 
-      if (data && data.length > 0) {
-        allData = [...allData, ...data]
-        hasMore = data.length === pageSize // If we got a full page, there might be more
-        page++
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [handler])
+
+  return ref
+}
+
+/**
+ * Hook for managing toast notifications
+ */
+export function useToast() {
+  const [toasts, setToasts] = useState<Array<{
+    id: string
+    type: 'success' | 'error' | 'warning' | 'info'
+    message: string
+    duration?: number
+  }>>([])
+
+  const addToast = useCallback((
+    type: 'success' | 'error' | 'warning' | 'info',
+    message: string,
+    duration: number = 5000
+  ) => {
+    const id = Math.random().toString(36).substr(2, 9)
+    setToasts(prev => [...prev, { id, type, message, duration }])
+
+    if (duration > 0) {
+      setTimeout(() => {
+        removeToast(id)
+      }, duration)
+    }
+
+    return id
+  }, [])
+
+  const removeToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id))
+  }, [])
+
+  const clearToasts = useCallback(() => {
+    setToasts([])
+  }, [])
+
+  return {
+    toasts,
+    addToast,
+    removeToast,
+    clearToasts,
+    success: (message: string, duration?: number) => addToast('success', message, duration),
+    error: (message: string, duration?: number) => addToast('error', message, duration),
+    warning: (message: string, duration?: number) => addToast('warning', message, duration),
+    info: (message: string, duration?: number) => addToast('info', message, duration)
+  }
+}
+
+/**
+ * Hook for environment validation
+ */
+export function useEnvironment() {
+  const [isValid, setIsValid] = useState(false)
+  const [errors, setErrors] = useState<string[]>([])
+
+  useEffect(() => {
+    try {
+      // Simple validation - can't import validateEnvironment here due to circular dependency
+      const requiredVars = [
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      ]
+      
+      if (requiredVars.every(Boolean)) {
+        setIsValid(true)
+        setErrors([])
       } else {
-        hasMore = false
+        setIsValid(false)
+        setErrors(['Missing required environment variables'])
+      }
+    } catch (error) {
+      setIsValid(false)
+      setErrors([error instanceof Error ? error.message : 'Unknown environment error'])
+    }
+  }, [])
+
+  return { isValid, errors }
+}
+
+/**
+ * Hook for keyboard shortcuts
+ */
+export function useKeyboardShortcut(
+  keys: string[],
+  callback: () => void,
+  deps: any[] = []
+) {
+  useEffect(() => {
+    function handleKeyPress(event: KeyboardEvent) {
+      const pressedKeys: string[] = []
+      
+      if (event.ctrlKey || event.metaKey) pressedKeys.push('ctrl')
+      if (event.shiftKey) pressedKeys.push('shift')
+      if (event.altKey) pressedKeys.push('alt')
+      pressedKeys.push(event.key.toLowerCase())
+
+      const matchesShortcut = keys.every(key => pressedKeys.includes(key.toLowerCase()))
+      
+      if (matchesShortcut) {
+        event.preventDefault()
+        callback()
       }
     }
 
-    return allData
-  } catch (error) {
-    if (error instanceof DatabaseError) {
-      throw error
-    }
-    handleDatabaseError(error, 'fetch all data paginated')
-  }
+    document.addEventListener('keydown', handleKeyPress)
+    return () => document.removeEventListener('keydown', handleKeyPress)
+  }, [...deps, callback])
 }
 
 /**
- * Fetch data by date range with optional filters
+ * Hook for managing synchronicity data with optimistic updates
  */
-export const fetchDataByDateRange = async (
-  startDate: string, 
-  endDate: string, 
-  options: QueryOptions = {}
-): Promise<SynchroData[]> => {
-  try {
-    const {
-      orderBy = 'date',
-      ascending = false,
-      limit = 10000, // Set high limit
-      offset
-    } = options
+export function useSynchroData() {
+  const [data, setData] = useState<SynchroData[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-    let query = supabase
-      .from('synchrodata')
-      .select('*')
-      .gte('date', startDate)
-      .lte('date', endDate)
-      .order(orderBy, { ascending })
-      .limit(limit)
+  const optimisticUpdate = useCallback((
+    operation: 'add' | 'update' | 'delete',
+    item: SynchroData,
+    rollback?: () => void
+  ) => {
+    const previousData = [...data]
 
-    if (offset) {
-      query = query.range(offset, offset + limit - 1)
-    }
-
-    const { data, error } = await query
-
-    if (error) {
-      handleDatabaseError(error, 'fetch data by date range')
-    }
-
-    return data || []
-  } catch (error) {
-    if (error instanceof DatabaseError) {
-      throw error
-    }
-    handleDatabaseError(error, 'fetch data by date range')
-  }
-}
-
-/**
- * Fetch data for a specific date
- */
-export const fetchDataByDate = async (date: string): Promise<SynchroData | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('synchrodata')
-      .select('*')
-      .eq('date', date)
-      .single()
-
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
-      handleDatabaseError(error, 'fetch data by date')
-    }
-
-    return data
-  } catch (error) {
-    if (error instanceof DatabaseError) {
-      throw error
-    }
-    handleDatabaseError(error, 'fetch data by date')
-  }
-}
-
-/**
- * Insert new synchronicity data
- */
-export const insertSynchroData = async (data: Partial<SynchroData>): Promise<SynchroData> => {
-  try {
-    // Validate required fields
-    if (!data.date) {
-      throw new DatabaseError('Date is required')
-    }
-
-    // Check if date already exists
-    const existingData = await fetchDataByDate(data.date)
-    if (existingData) {
-      throw new DatabaseError('An entry for this date already exists')
-    }
-
-    // Calculate synchrosum if time slots are provided
-    const timeSlots = [
-      '00:00', '01:01', '02:02', '03:03', '04:04', '05:05', '06:06', 
-      '07:07', '08:08', '09:09', '10:10', '11:11', '12:12',
-      '13:13', '14:14', '15:15', '16:16', '17:17', '18:18',
-      '19:19', '20:20', '21:21', '22:22', '23:23'
-    ]
-    
-    const synchrosum = timeSlots.reduce((sum, time) => {
-      return sum + (data[time as keyof SynchroData] as number || 0)
-    }, 0)
-
-    const dataToInsert = {
-      ...data,
-      synchrosum
-    }
-
-    const { data: result, error } = await supabase
-      .from('synchrodata')
-      .insert([dataToInsert])
-      .select()
-      .single()
-
-    if (error) {
-      handleDatabaseError(error, 'insert data')
-    }
-
-    return result
-  } catch (error) {
-    if (error instanceof DatabaseError) {
-      throw error
-    }
-    handleDatabaseError(error, 'insert data')
-  }
-}
-
-/**
- * Update existing synchronicity data
- */
-export const updateSynchroData = async (id: number, data: Partial<SynchroData>): Promise<SynchroData> => {
-  try {
-    // Calculate synchrosum if time slots are updated
-    const timeSlots = [
-      '00:00', '01:01', '02:02', '03:03', '04:04', '05:05', '06:06', 
-      '07:07', '08:08', '09:09', '10:10', '11:11', '12:12',
-      '13:13', '14:14', '15:15', '16:16', '17:17', '18:18',
-      '19:19', '20:20', '21:21', '22:22', '23:23'
-    ]
-    
-    const hasTimeSlotData = timeSlots.some(time => data[time as keyof SynchroData] !== undefined)
-    
-    let dataToUpdate = { ...data }
-    
-    if (hasTimeSlotData) {
-      // Fetch current data to calculate new synchrosum
-      const currentData = await fetchDataById(id)
-      if (currentData) {
-        const mergedData = { ...currentData, ...data }
-        const synchrosum = timeSlots.reduce((sum, time) => {
-          return sum + (mergedData[time as keyof SynchroData] as number || 0)
-        }, 0)
-        dataToUpdate.synchrosum = synchrosum
+    try {
+      switch (operation) {
+        case 'add':
+          setData(prev => [item, ...prev])
+          break
+        case 'update':
+          setData(prev => prev.map(d => d.id === item.id ? item : d))
+          break
+        case 'delete':
+          setData(prev => prev.filter(d => d.id !== item.id))
+          break
       }
-    }
-
-    const { data: result, error } = await supabase
-      .from('synchrodata')
-      .update(dataToUpdate)
-      .eq('id', id)
-      .select()
-      .single()
-
-    if (error) {
-      handleDatabaseError(error, 'update data')
-    }
-
-    return result
-  } catch (error) {
-    if (error instanceof DatabaseError) {
+    } catch (error) {
+      // Rollback on error
+      setData(previousData)
+      if (rollback) rollback()
       throw error
     }
-    handleDatabaseError(error, 'update data')
+  }, [data])
+
+  return {
+    data,
+    setData,
+    loading,
+    setLoading,
+    error,
+    setError,
+    optimisticUpdate
   }
 }
-
-/**
- * Delete synchronicity data by ID
- */
-export const deleteSynchroData = async (id: number): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('synchrodata')
-      .delete()
-      .eq('id', id)
-
-    if (error) {
-      handleDatabaseError(error, 'delete data')
-    }
-  } catch (error) {
-    if (error instanceof DatabaseError) {
-      throw error
-    }
-    handleDatabaseError(error, 'delete data')
-  }
-}
-
-/**
- * Fetch data by ID
- */
-export const fetchDataById = async (id: number): Promise<SynchroData | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('synchrodata')
-      .select('*')
-      .eq('id', id)
-      .single()
-
-    if (error && error.code !== 'PGRST116') {
-      handleDatabaseError(error, 'fetch data by ID')
-    }
-
-    return data
-  } catch (error) {
-    if (error instanceof DatabaseError) {
-      throw error
-    }
-    handleDatabaseError(error, 'fetch data by ID')
-  }
-}
-
-/**
- * Get database statistics
- */
-export const getDatabaseStats = async (): Promise<{
-  totalEntries: number
-  dateRange: { start: string | null; end: string | null }
-  lastEntry: string | null
-}> => {
-  try {
-    const { count, error: countError } = await supabase
-      .from('synchrodata')
-      .select('*', { count: 'exact', head: true })
-
-    if (countError) {
-      handleDatabaseError(countError, 'get database stats')
-    }
-
-    const { data: dateData, error: dateError } = await supabase
-      .from('synchrodata')
-      .select('date')
-      .order('date', { ascending: true })
-      .limit(1)
-
-    const { data: lastDateData, error: lastDateError } = await supabase
-      .from('synchrodata')
-      .select('date')
-      .order('date', { ascending: false })
-      .limit(1)
-
-    if (dateError || lastDateError) {
-      handleDatabaseError(dateError || lastDateError, 'get database stats')
-    }
-
-    return {
-      totalEntries: count || 0,
-      dateRange: {
-        start: dateData?.[0]?.date || null,
-        end: lastDateData?.[0]?.date || null
-      },
-      lastEntry: lastDateData?.[0]?.date || null
-    }
-  } catch (error) {
-    if (error instanceof DatabaseError) {
-      throw error
-    }
-    handleDatabaseError(error, 'get database stats')
-  }
-}
-
-/**
- * Check database connection
- */
-export const checkConnection = async (): Promise<boolean> => {
-  try {
-    const { error } = await supabase
-      .from('synchrodata')
-      .select('id')
-      .limit(1)
-      .single()
-
-    // Even if no data exists, as long as there's no connection error, we're good
-    return error?.code !== 'PGRST301'
-  } catch (error) {
-    console.error('Database connection check failed:', error)
-    return false
-  }
-}
-
-// Export the time slots array for use in components
-export const TIME_SLOTS = [
-  '00:00', '01:01', '02:02', '03:03', '04:04', '05:05', '06:06', 
-  '07:07', '08:08', '09:09', '10:10', '11:11', '12:12',
-  '13:13', '14:14', '15:15', '16:16', '17:17', '18:18',
-  '19:19', '20:20', '21:21', '22:22', '23:23'
-] as const
-
-export type TimeSlot = typeof TIME_SLOTS[number]
