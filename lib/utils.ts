@@ -167,9 +167,11 @@ export const aggregateDataByWeeks = (data: SynchroData[]) => {
       weeklyData.set(weekKey, { sum: 0, count: 0 })
     }
     
-    const weekData = weeklyData.get(weekKey)!
-    weekData.sum += d.subjectivesynchro || 0
-    weekData.count++
+    const weekData = weeklyData.get(weekKey)
+    if (weekData) {
+      weekData.sum += d.subjectivesynchro || 0
+      weekData.count++
+    }
   })
   
   return Array.from(weeklyData.entries()).map(([week, data]) => ({
@@ -190,9 +192,11 @@ export const aggregateDataByMonths = (data: SynchroData[]) => {
       monthlyData.set(monthKey, { sum: 0, count: 0 })
     }
     
-    const monthData = monthlyData.get(monthKey)!
-    monthData.sum += d.subjectivesynchro || 0
-    monthData.count++
+    const monthData = monthlyData.get(monthKey)
+    if (monthData) {
+      monthData.sum += d.subjectivesynchro || 0
+      monthData.count++
+    }
   })
   
   return Array.from(monthlyData.entries()).map(([month, data]) => ({
@@ -213,9 +217,11 @@ export const aggregateDataByYears = (data: SynchroData[]) => {
       yearlyData.set(yearKey, { sum: 0, count: 0 })
     }
     
-    const yearData = yearlyData.get(yearKey)!
-    yearData.sum += d.subjectivesynchro || 0
-    yearData.count++
+    const yearData = yearlyData.get(yearKey)
+    if (yearData) {
+      yearData.sum += d.subjectivesynchro || 0
+      yearData.count++
+    }
   })
   
   return Array.from(yearlyData.entries()).map(([year, data]) => ({
@@ -226,12 +232,12 @@ export const aggregateDataByYears = (data: SynchroData[]) => {
 }
 
 export const aggregateDataByDayOfWeek = (data: SynchroData[]) => {
-  const dayData = new Array(7).fill(0).map(() => ({ sum: 0, count: 0 }))
+  const dayData = new Array(7).fill(null).map(() => ({ sum: 0, count: 0 }))
   const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
   
   data.filter(d => d.day_of_the_week && d.subjectivesynchro != null).forEach(d => {
     const dayIndex = dayNames.indexOf(d.day_of_the_week!)
-    if (dayIndex !== -1) {
+    if (dayIndex !== -1 && dayData[dayIndex]) {
       dayData[dayIndex].sum += d.subjectivesynchro || 0
       dayData[dayIndex].count++
     }
