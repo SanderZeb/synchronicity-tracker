@@ -26,15 +26,20 @@ interface ValidationErrors {
 export default function InputSection({ onDataUpdate }: InputSectionProps) {
   // Create initial form data with proper types
   const getCurrentDate = (): string => {
-    return new Date().toISOString().split('T')[0]
+    const isoString = new Date().toISOString()
+    const datePart = isoString.split('T')[0]
+    return datePart || new Date().toISOString().slice(0, 10) // Fallback for type safety
   }
 
-  const [formData, setFormData] = useState<Partial<SynchroData>>(() => ({
-    date: getCurrentDate(),
-    subjectivesynchro: 3, // Default to middle of 1-5 scale
-    subjectivemood: 3,
-    productivity: 3
-  }))
+  const [formData, setFormData] = useState<Partial<SynchroData>>(() => {
+    const initialData: Partial<SynchroData> = {
+      date: getCurrentDate(),
+      subjectivesynchro: 3, // Default to middle of 1-5 scale
+      subjectivemood: 3,
+      productivity: 3
+    }
+    return initialData
+  })
   
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -47,10 +52,16 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
     if (formData.date) {
       const date = new Date(formData.date)
       const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-      setFormData(prev => ({
-        ...prev,
-        day_of_the_week: days[date.getDay()]
-      }))
+      const dayName = days[date.getDay()]
+      if (dayName) {
+        setFormData(prev => {
+          const updated: Partial<SynchroData> = {
+            ...prev,
+            day_of_the_week: dayName
+          }
+          return updated
+        })
+      }
     }
   }, [formData.date])
 
@@ -100,11 +111,11 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
       ]
       
       const synchrosum = timeSlots.reduce((sum, time) => {
-        return sum + (formData[time as keyof SynchroData] as number || 0)
+        return sum + ((formData[time as keyof SynchroData] as number) || 0)
       }, 0)
 
       // Convert sleep hours to minutes for storage
-      const dataToSubmit = {
+      const dataToSubmit: Partial<SynchroData> = {
         ...formData,
         synchrosum,
         sleepavg: formData.sleepavg ? formData.sleepavg * 60 : undefined // Convert hours to minutes
@@ -117,12 +128,13 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
       // Reset form after success
       setTimeout(() => {
         setSuccess(false)
-        setFormData({
+        const resetData: Partial<SynchroData> = {
           date: getCurrentDate(),
           subjectivesynchro: 3,
           subjectivemood: 3,
           productivity: 3
-        })
+        }
+        setFormData(resetData)
         setActiveSection('basic')
       }, 2000)
     } catch (err) {
@@ -133,16 +145,20 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
   }
 
   const handleChange = (field: keyof SynchroData, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }))
+    setFormData(prev => {
+      const updated: Partial<SynchroData> = {
+        ...prev,
+        [field]: value
+      }
+      return updated
+    })
     
     // Clear validation error for this field
-    if (validationErrors[field]) {
+    const fieldString = field as string
+    if (validationErrors[fieldString]) {
       setValidationErrors(prev => {
         const newErrors = { ...prev }
-        delete newErrors[field]
+        delete newErrors[fieldString]
         return newErrors
       })
     }
@@ -174,13 +190,22 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
     icon?: React.ComponentType<any>
     description?: string
   }) => {
-    const value = formData[field] as number || min
+    const value = (formData[field] as number) || min
     const percentage = ((value - min) / (max - min)) * 100
     
     const colorClasses = {
       primary: 'bg-primary-500',
       accent: 'bg-accent-400',
       success: 'bg-green-500'
+    }
+
+    const getColorValue = (colorType: 'primary' | 'accent' | 'success'): string => {
+      const colorMap = {
+        primary: '#3399e6',
+        accent: '#339999',
+        success: '#22c55e'
+      }
+      return colorMap[colorType]
     }
 
     const getValueLabel = (val: number) => {
@@ -224,10 +249,13 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
             max={max}
             step={step}
             value={value}
-            onChange={(e) => handleChange(field, parseFloat(e.target.value))}
+            onChange={(e) => {
+              const newValue = parseFloat(e.target.value)
+              handleChange(field, newValue)
+            }}
             className="w-full"
             style={{
-              background: `linear-gradient(to right, ${colorClasses[color].replace('bg-', '#')} 0%, ${colorClasses[color].replace('bg-', '#')} ${percentage}%, #e8ecf0 ${percentage}%, #e8ecf0 100%)`
+              background: `linear-gradient(to right, ${getColorValue(color)} 0%, ${getColorValue(color)} ${percentage}%, #e8ecf0 ${percentage}%, #e8ecf0 100%)`
             }}
           />
           <div className="flex justify-between text-xs text-text-muted mt-1">
@@ -235,8 +263,8 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
             <span>{max}</span>
           </div>
         </div>
-        {validationErrors[field] && (
-          <p className="text-red-500 text-xs">{validationErrors[field]}</p>
+        {validationErrors[field as string] && (
+          <p className="text-red-500 text-xs">{validationErrors[field as string]}</p>
         )}
       </div>
     )
@@ -277,8 +305,11 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
           max={max}
           placeholder={placeholder}
           value={formData[field] as number || ''}
-          onChange={(e) => handleChange(field, e.target.value ? parseFloat(e.target.value) : null)}
-          className={`input-field ${unit ? 'pr-12' : ''} ${validationErrors[field] ? 'input-error' : ''}`}
+          onChange={(e) => {
+            const newValue = e.target.value ? parseFloat(e.target.value) : undefined
+            handleChange(field, newValue)
+          }}
+          className={`input-field ${unit ? 'pr-12' : ''} ${validationErrors[field as string] ? 'input-error' : ''}`}
         />
         {unit && (
           <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-text-muted">
@@ -286,8 +317,8 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
           </span>
         )}
       </div>
-      {validationErrors[field] && (
-        <p className="text-red-500 text-xs">{validationErrors[field]}</p>
+      {validationErrors[field as string] && (
+        <p className="text-red-500 text-xs">{validationErrors[field as string]}</p>
       )}
     </div>
   )
@@ -317,7 +348,7 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
           type="button"
           onClick={() => {
             timeSlots.forEach(time => {
-              const current = formData[time as keyof SynchroData] as number || 0
+              const current = (formData[time as keyof SynchroData] as number) || 0
               handleChange(time as keyof SynchroData, current + 1)
             })
           }}
@@ -330,7 +361,7 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
       {/* Time Grid with improved styling */}
       <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
         {timeSlots.map(time => {
-          const value = formData[time as keyof SynchroData] as number || 0
+          const value = (formData[time as keyof SynchroData] as number) || 0
           const intensity = Math.min(value / 5, 1) // Max intensity at 5 events
           
           return (
@@ -372,10 +403,10 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
       <div className="text-center">
         <div className="inline-flex items-center space-x-4 text-sm">
           <span className="text-text-secondary">
-            Total events: <span className="font-semibold text-text-primary">{timeSlots.reduce((sum, time) => sum + (formData[time as keyof SynchroData] as number || 0), 0)}</span>
+            Total events: <span className="font-semibold text-text-primary">{timeSlots.reduce((sum, time) => sum + ((formData[time as keyof SynchroData] as number) || 0), 0)}</span>
           </span>
           <span className="badge badge-primary">
-            Peak: {Math.max(...timeSlots.map(time => formData[time as keyof SynchroData] as number || 0))}
+            Peak: {Math.max(...timeSlots.map(time => (formData[time as keyof SynchroData] as number) || 0))}
           </span>
         </div>
       </div>
@@ -438,8 +469,8 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
                   <label className="block text-sm font-medium text-text-primary">Date *</label>
                   <input
                     type="date"
-                    value={formData.date || ''}
-                    onChange={(e) => handleChange('date', e.target.value)}
+                    value={formData.date || getCurrentDate()}
+                    onChange={(e) => handleChange('date', e.target.value || getCurrentDate())}
                     className={`input-field ${validationErrors.date ? 'input-error' : ''}`}
                     required
                   />
@@ -669,12 +700,13 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
                 <button
                   type="button"
                   onClick={() => {
-                    setFormData({
+                    const resetData: Partial<SynchroData> = {
                       date: getCurrentDate(),
                       subjectivesynchro: 3,
                       subjectivemood: 3,
                       productivity: 3
-                    })
+                    }
+                    setFormData(resetData)
                     setValidationErrors({})
                     setActiveSection('basic')
                   }}
