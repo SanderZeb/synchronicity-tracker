@@ -24,12 +24,18 @@ interface ValidationErrors {
 }
 
 export default function InputSection({ onDataUpdate }: InputSectionProps) {
-  const [formData, setFormData] = useState<Partial<SynchroData>>({
-    date: new Date().toISOString().split('T')[0],
+  // Create initial form data with proper types
+  const getCurrentDate = (): string => {
+    return new Date().toISOString().split('T')[0]
+  }
+
+  const [formData, setFormData] = useState<Partial<SynchroData>>(() => ({
+    date: getCurrentDate(),
     subjectivesynchro: 3, // Default to middle of 1-5 scale
     subjectivemood: 3,
     productivity: 3
-  })
+  }))
+  
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -112,7 +118,7 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
       setTimeout(() => {
         setSuccess(false)
         setFormData({
-          date: new Date().toISOString().split('T')[0],
+          date: getCurrentDate(),
           subjectivesynchro: 3,
           subjectivemood: 3,
           productivity: 3
@@ -664,7 +670,7 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
                   type="button"
                   onClick={() => {
                     setFormData({
-                      date: new Date().toISOString().split('T')[0],
+                      date: getCurrentDate(),
                       subjectivesynchro: 3,
                       subjectivemood: 3,
                       productivity: 3
