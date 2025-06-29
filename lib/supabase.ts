@@ -336,6 +336,7 @@ export const fetchAllData = async (options: QueryOptions = {}): Promise<SynchroD
       throw error
     }
     handleDatabaseError(error, 'fetch all data')
+    return [] // TypeScript safety fallback
   }
 }
 
@@ -380,6 +381,7 @@ export const fetchAllDataPaginated = async (options: QueryOptions = {}): Promise
       throw error
     }
     handleDatabaseError(error, 'fetch all data paginated')
+    return [] // TypeScript safety fallback
   }
 }
 
@@ -423,6 +425,7 @@ export const fetchDataByDateRange = async (
       throw error
     }
     handleDatabaseError(error, 'fetch data by date range')
+    return [] // TypeScript safety fallback
   }
 }
 
@@ -447,6 +450,7 @@ export const fetchDataByDate = async (date: string): Promise<SynchroData | null>
       throw error
     }
     handleDatabaseError(error, 'fetch data by date')
+    return null // TypeScript safety fallback
   }
 }
 
@@ -493,12 +497,17 @@ export const insertSynchroData = async (data: Partial<SynchroData>): Promise<Syn
       handleDatabaseError(error, 'insert data')
     }
 
+    if (!result) {
+      throw new DatabaseError('No data returned after insert')
+    }
+
     return result
   } catch (error) {
     if (error instanceof DatabaseError) {
       throw error
     }
     handleDatabaseError(error, 'insert data')
+    throw new DatabaseError('Insert operation failed') // TypeScript safety fallback
   }
 }
 
@@ -542,12 +551,17 @@ export const updateSynchroData = async (id: number, data: Partial<SynchroData>):
       handleDatabaseError(error, 'update data')
     }
 
+    if (!result) {
+      throw new DatabaseError('No data returned after update')
+    }
+
     return result
   } catch (error) {
     if (error instanceof DatabaseError) {
       throw error
     }
     handleDatabaseError(error, 'update data')
+    throw new DatabaseError('Update operation failed') // TypeScript safety fallback
   }
 }
 
@@ -569,6 +583,7 @@ export const deleteSynchroData = async (id: number): Promise<void> => {
       throw error
     }
     handleDatabaseError(error, 'delete data')
+    // No return needed for void function, but this satisfies TypeScript
   }
 }
 
@@ -593,6 +608,7 @@ export const fetchDataById = async (id: number): Promise<SynchroData | null> => 
       throw error
     }
     handleDatabaseError(error, 'fetch data by ID')
+    return null // TypeScript safety fallback
   }
 }
 
@@ -642,6 +658,11 @@ export const getDatabaseStats = async (): Promise<{
       throw error
     }
     handleDatabaseError(error, 'get database stats')
+    return {
+      totalEntries: 0,
+      dateRange: { start: null, end: null },
+      lastEntry: null
+    } // TypeScript safety fallback
   }
 }
 
