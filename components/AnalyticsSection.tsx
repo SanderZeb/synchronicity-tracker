@@ -1,791 +1,673 @@
-'use client'
+import { createClient } from '@supabase/supabase-js'
+import { DatabaseError } from '../components/ErrorBoundary'
 
-import { useState } from 'react'
-import { SynchroData } from '../lib/supabase'
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Scatter,
-  ScatterChart
-} from 'recharts'
-import { format, parseISO, startOfWeek, startOfMonth, startOfYear, getDay } from 'date-fns'
-import { 
-  ChartBarIcon,
-  FireIcon,
-  HeartIcon,
-  ClockIcon,
-  ArrowTrendingUpIcon,
-  CalendarIcon,
-  MoonIcon,
-  SunIcon
-} from '@heroicons/react/24/outline'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-interface AnalyticsSectionProps {
-  data: SynchroData[]
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables. Please check your .env.local file.')
 }
 
-type HeatmapType = 'weeks' | 'months' | 'years' | 'dayOfWeek' | 'earthSunDistance' | 'moonPhase'
-type TimelineMetric = 'subjectivesynchro' | 'subjectivemood' | 'productivity' | 'sleepavg' | 'stres'
-type CorrelationMetric = 'subjectivesynchro' | 'subjectivemood' | 'productivity' | 'sleepavg' | 'stres'
-
-export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
-  const [selectedChart, setSelectedChart] = useState<'timeline' | 'heatmap' | 'correlations' | 'mood'>('heatmap')
-  const [heatmapType, setHeatmapType] = useState<HeatmapType>('weeks')
-  const [timelineMetrics, setTimelineMetrics] = useState<TimelineMetric[]>(['subjectivesynchro', 'subjectivemood'])
-  const [correlationX, setCorrelationX] = useState<CorrelationMetric>('subjectivesynchro')
-  const [correlationY, setCorrelationY] = useState<CorrelationMetric>('subjectivemood')
-
-  // Convert sleep from minutes to hours for display
-  const convertSleepToHours = (minutes: number | undefined): number => {
-    return minutes ? minutes / 60 : 0
-  }
-
-  // Process data for timeline chart with selectable metrics
-  const prepareTimelineData = () => {
-    return data
-      .filter(d => d.date)
-      .sort((a, b) => new Date(a.date!).getTime() - new Date(b.date!).getTime())
-      .map(d => {
-        const entry: any = {
-          date: d.date!,
-        }
-        
-        timelineMetrics.forEach(metric => {
-          if (metric === 'sleepavg') {
-            entry[metric] = convertSleepToHours(d[metric])
-          } else {
-            entry[metric] = d[metric] || 0
-          }
-        })
-        
-        return entry
-      })
-  }
-
-  // Enhanced heatmap data preparation
-  const prepareHeatmapData = () => {
-    const filteredData = data.filter(d => d.date && d.subjectivesynchro != null)
-    
-    switch (heatmapType) {
-      case 'weeks':
-        return prepareWeeklyHeatmap(filteredData)
-      case 'months':
-        return prepareMonthlyHeatmap(filteredData)
-      case 'years':
-        return prepareYearlyHeatmap(filteredData)
-      case 'dayOfWeek':
-        return prepareDayOfWeekHeatmap(filteredData)
-      case 'earthSunDistance':
-        return prepareEarthSunDistanceHeatmap(filteredData)
-      case 'moonPhase':
-        return prepareMoonPhaseHeatmap(filteredData)
-      default:
-        return prepareWeeklyHeatmap(filteredData)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'synchronicity-tracker@2.0.0'
     }
   }
+})
 
-  const prepareWeeklyHeatmap = (filteredData: SynchroData[]) => {
-    const weeklyData = new Map<string, number[]>()
-    const weeklyCounts = new Map<string, number>()
-    
-    filteredData.forEach(d => {
-      const date = new Date(d.date!)
-      const weekStart = startOfWeek(date, { weekStartsOn: 1 }) // Monday start
-      const weekKey = format(weekStart, 'yyyy-MM-dd')
-      const dayOfWeek = getDay(date) === 0 ? 6 : getDay(date) - 1 // Monday = 0, Sunday = 6
-      
-      if (!weeklyData.has(weekKey)) {
-        weeklyData.set(weekKey, new Array(7).fill(0))
-        weeklyCounts.set(weekKey, 0)
-      }
-      
-      const weekValues = weeklyData.get(weekKey)
-      const count = weeklyCounts.get(weekKey)
-      
-      // FIXED: Add proper type safety checks
-      if (weekValues && dayOfWeek >= 0 && dayOfWeek < 7 && weekValues[dayOfWeek] !== undefined && count !== undefined) {
-        weekValues[dayOfWeek] += d.subjectivesynchro || 0
-        weeklyCounts.set(weekKey, count + 1)
-      }
-    })
+// Updated interface to match exact database schema
+export interface SynchroData {
+  id?: number
+  date?: string // timestamp with time zone
+  
+  // Time-based synchronicity columns (exact DB column names)
+  '01:01'?: number
+  '02:02'?: number
+  '03:03'?: number
+  '04:04'?: number
+  '05:05'?: number
+  '06:06'?: number
+  '07:07'?: number
+  '08:08'?: number
+  '09:09'?: number
+  '10:10'?: number
+  '11:11'?: number
+  '12:12'?: number
+  '13:13'?: number
+  '14:14'?: number
+  '15:15'?: number
+  '16:16'?: number
+  '17:17'?: number
+  '18:18'?: number
+  '19:19'?: number
+  '20:20'?: number
+  '21:21'?: number
+  '22:22'?: number
+  '23:23'?: number
+  '00:00'?: number
+  
+  // Main metrics (matching DB lowercase)
+  synchrosum?: number
+  subjectivesynchro?: number
+  subjectivemood?: number
+  productivity?: number
+  unlocks?: number
+  
+  // Health metrics
+  heartratedaily?: number
+  heartrateresting?: number
+  stepsphone?: number
+  weight?: number
+  skinproblems?: number
+  
+  // Sleep data
+  sleepphone?: number
+  sleepband?: number
+  sleepavg?: number
+  sleepdifference?: number
+  sleep_fallasleep_time?: number
+  sleepwakeupavg?: number
+  sleepwakeupband?: number
+  sleepwakeupphone?: number
+  sleepwakeupquality?: number
+  sleep_faalasleep_time?: number // Additional field from DB
+  
+  // Mental states
+  statehealth?: number
+  staterelationship?: number
+  stateselfesteem?: number
+  stateinteligence?: number
+  statesocialskill?: number
+  stateimmerse?: number
+  stres?: number
+  workload?: number
+  
+  // Substances
+  stimmg?: number
+  stimsum?: number
+  methylphenidatetabs?: number
+  methylphenidatemg?: number
+  alcohol?: number
+  
+  // Diet
+  dietkcal?: number
+  dietcarbs?: number
+  dietprotein?: number
+  dietfats?: number
+  
+  // Cosmic data
+  ageofmoon?: number
+  earthsundistance?: number
+  moonphase?: number // Changed to number to match DB (double precision)
+  
+  // Other metrics
+  void?: number
+  ocount?: number
+  oquality?: number
+  subjectivemisses?: number
+  misssum?: number
+  singletrialmean?: number
+  singletrialsum?: number
+  luck?: number
+  weekcount?: number
+  day_of_the_week?: string
+}
 
-    const heatmapData: any[] = []
-    const weeks = Array.from(weeklyData.keys()).sort().slice(-12) // Last 12 weeks
-    const maxValue = Math.max(...Array.from(weeklyData.values()).flat().filter(v => v > 0))
-    
-    weeks.forEach((weekKey, weekIndex) => {
-      const weekValues = weeklyData.get(weekKey)
-      if (weekValues) {
-        weekValues.forEach((value, dayIndex) => {
-          const intensity = maxValue > 0 ? (value / maxValue) : 0
-          heatmapData.push({
-            x: dayIndex,
-            y: weekIndex,
-            value,
-            intensity,
-            label: `Week ${format(parseISO(weekKey), 'MMM dd')}, ${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][dayIndex]}`
-          })
-        })
-      }
-    })
+// Helper interface for display purposes with camelCase
+export interface SynchroDataDisplay {
+  id?: number
+  date?: string
+  dayOfWeek?: string
+  
+  // Time slots
+  timeSlots?: Record<string, number>
+  
+  // Main metrics
+  synchroSum?: number
+  subjectiveSynchro?: number
+  subjectiveMood?: number
+  productivity?: number
+  
+  // Health
+  heartRateDaily?: number
+  heartRateResting?: number
+  stepsPhone?: number
+  weight?: number
+  
+  // Sleep
+  sleepAvg?: number
+  sleepQuality?: number
+  
+  // Mental states
+  stateHealth?: number
+  stateRelationship?: number
+  stateSelfEsteem?: number
+  stateIntelligence?: number
+  stateSocialSkill?: number
+  stateImmerse?: number
+  stress?: number
+  
+  // Substances
+  stimulants?: number
+  alcohol?: number
+  
+  // Diet
+  calories?: number
+  carbs?: number
+  protein?: number
+  fats?: number
+  
+  // Cosmic
+  moonPhase?: string
+}
 
-    return { 
-      heatmapData, 
-      maxValue, 
-      xLabels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-      yLabels: weeks.map(w => format(parseISO(w), 'MMM dd'))
-    }
-  }
+// Database response types
+export interface DatabaseResponse<T> {
+  data: T | null
+  error: Error | null
+  count?: number
+}
 
-  const prepareMonthlyHeatmap = (filteredData: SynchroData[]) => {
-    const monthlyData = new Map<string, number>()
-    const monthlyCounts = new Map<string, number>()
-    
-    filteredData.forEach(d => {
-      const date = new Date(d.date!)
-      const monthKey = format(startOfMonth(date), 'yyyy-MM')
-      
-      if (!monthlyData.has(monthKey)) {
-        monthlyData.set(monthKey, 0)
-        monthlyCounts.set(monthKey, 0)
-      }
-      
-      const currentValue = monthlyData.get(monthKey)
-      const currentCount = monthlyCounts.get(monthKey)
-      
-      if (currentValue !== undefined && currentCount !== undefined) {
-        monthlyData.set(monthKey, currentValue + (d.subjectivesynchro || 0))
-        monthlyCounts.set(monthKey, currentCount + 1)
-      }
-    })
+// Query options interface
+export interface QueryOptions {
+  orderBy?: keyof SynchroData
+  ascending?: boolean
+  limit?: number
+  offset?: number
+}
 
-    const heatmapData: any[] = []
-    const months = Array.from(monthlyData.keys()).sort().slice(-24) // Last 24 months
-    const maxValue = Math.max(...Array.from(monthlyData.values()))
-    
-    months.forEach((monthKey, index) => {
-      const totalValue = monthlyData.get(monthKey)
-      const count = monthlyCounts.get(monthKey)
-      
-      if (totalValue !== undefined && count !== undefined && count > 0) {
-        const value = totalValue / count
-        const intensity = maxValue > 0 ? (value / maxValue) : 0
-        
-        heatmapData.push({
-          x: index % 12,
-          y: Math.floor(index / 12),
-          value: value.toFixed(1),
-          intensity,
-          label: format(parseISO(monthKey + '-01'), 'MMM yyyy')
-        })
-      }
-    })
+// Helper function to convert DB data to display format
+export const convertToDisplay = (data: SynchroData): SynchroDataDisplay => {
+  const timeSlots: Record<string, number> = {}
+  const timeCols = [
+    '00:00', '01:01', '02:02', '03:03', '04:04', '05:05', '06:06', 
+    '07:07', '08:08', '09:09', '10:10', '11:11', '12:12',
+    '13:13', '14:14', '15:15', '16:16', '17:17', '18:18',
+    '19:19', '20:20', '21:21', '22:22', '23:23'
+  ]
+  
+  timeCols.forEach(time => {
+    const value = data[time as keyof SynchroData] as number
+    if (value !== undefined) timeSlots[time] = value
+  })
 
-    return { 
-      heatmapData, 
-      maxValue, 
-      xLabels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-      yLabels: ['Last Year', 'This Year']
-    }
-  }
-
-  const prepareYearlyHeatmap = (filteredData: SynchroData[]) => {
-    const yearlyData = new Map<string, number>()
-    const yearlyCounts = new Map<string, number>()
-    
-    filteredData.forEach(d => {
-      const date = new Date(d.date!)
-      const yearKey = format(startOfYear(date), 'yyyy')
-      
-      if (!yearlyData.has(yearKey)) {
-        yearlyData.set(yearKey, 0)
-        yearlyCounts.set(yearKey, 0)
-      }
-      
-      const currentValue = yearlyData.get(yearKey)
-      const currentCount = yearlyCounts.get(yearKey)
-      
-      if (currentValue !== undefined && currentCount !== undefined) {
-        yearlyData.set(yearKey, currentValue + (d.subjectivesynchro || 0))
-        yearlyCounts.set(yearKey, currentCount + 1)
-      }
-    })
-
-    const heatmapData: any[] = []
-    const years = Array.from(yearlyData.keys()).sort()
-    const maxValue = Math.max(...Array.from(yearlyData.values()))
-    
-    years.forEach((yearKey, index) => {
-      const totalValue = yearlyData.get(yearKey)
-      const count = yearlyCounts.get(yearKey)
-      
-      if (totalValue !== undefined && count !== undefined && count > 0) {
-        const value = totalValue / count
-        const intensity = maxValue > 0 ? (value / maxValue) : 0
-        
-        heatmapData.push({
-          x: index,
-          y: 0,
-          value: value.toFixed(1),
-          intensity,
-          label: yearKey
-        })
-      }
-    })
-
-    return { 
-      heatmapData, 
-      maxValue, 
-      xLabels: years,
-      yLabels: ['Average']
-    }
-  }
-
-  const prepareDayOfWeekHeatmap = (filteredData: SynchroData[]) => {
-    const dayData = new Array(7).fill(0).map(() => ({ sum: 0, count: 0 }))
-    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    
-    filteredData.forEach(d => {
-      if (d.day_of_the_week) {
-        const dayIndex = dayNames.indexOf(d.day_of_the_week)
-        if (dayIndex !== -1 && dayData[dayIndex]) {
-          dayData[dayIndex].sum += d.subjectivesynchro || 0
-          dayData[dayIndex].count++
-        }
-      }
-    })
-
-    const heatmapData: any[] = []
-    const maxValue = Math.max(...dayData.map((data) => data.count > 0 ? data.sum / data.count : 0))
-    
-    dayData.forEach((data, index) => {
-      const avgValue = data.count > 0 ? data.sum / data.count : 0
-      const intensity = maxValue > 0 ? (avgValue / maxValue) : 0
-      
-      heatmapData.push({
-        x: index,
-        y: 0,
-        value: avgValue.toFixed(1),
-        intensity,
-        label: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][index]
-      })
-    })
-
-    return { 
-      heatmapData, 
-      maxValue, 
-      xLabels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-      yLabels: ['Average']
-    }
-  }
-
-  const prepareEarthSunDistanceHeatmap = (filteredData: SynchroData[]) => {
-    const distances = filteredData
-      .filter(d => d.earthsundistance != null)
-      .map(d => d.earthsundistance!)
-    
-    if (distances.length === 0) return { heatmapData: [], maxValue: 0, xLabels: [], yLabels: [] }
-    
-    const minDist = Math.min(...distances)
-    const maxDist = Math.max(...distances)
-    const binSize = (maxDist - minDist) / 4
-    
-    const bins = Array(4).fill(0).map(() => ({ sum: 0, count: 0 }))
-    
-    filteredData.forEach(d => {
-      if (d.earthsundistance != null && d.subjectivesynchro != null) {
-        const binIndex = Math.min(3, Math.floor((d.earthsundistance - minDist) / binSize))
-        if (bins[binIndex]) {
-          bins[binIndex].sum += d.subjectivesynchro
-          bins[binIndex].count++
-        }
-      }
-    })
-
-    const heatmapData: any[] = []
-    const maxValue = Math.max(...bins.map(bin => bin.count > 0 ? bin.sum / bin.count : 0))
-    
-    bins.forEach((bin, index) => {
-      const avgValue = bin.count > 0 ? bin.sum / bin.count : 0
-      const intensity = maxValue > 0 ? (avgValue / maxValue) : 0
-      
-      heatmapData.push({
-        x: index,
-        y: 0,
-        value: avgValue.toFixed(1),
-        intensity,
-        label: `Bin ${index + 1}`
-      })
-    })
-
-    return { 
-      heatmapData, 
-      maxValue, 
-      xLabels: ['Near', 'Med-Near', 'Med-Far', 'Far'],
-      yLabels: ['Earth-Sun Distance']
-    }
-  }
-
-  const prepareMoonPhaseHeatmap = (filteredData: SynchroData[]) => {
-    const phases = Array(8).fill(0).map(() => ({ sum: 0, count: 0 }))
-    const phaseNames = ['New', 'Wax Cres', 'First Q', 'Wax Gib', 'Full', 'Wan Gib', 'Last Q', 'Wan Cres']
-    
-    filteredData.forEach(d => {
-      if (d.moonphase != null && d.subjectivesynchro != null) {
-        const phaseIndex = Math.floor((d.moonphase / 45)) % 8
-        if (phases[phaseIndex]) {
-          phases[phaseIndex].sum += d.subjectivesynchro
-          phases[phaseIndex].count++
-        }
-      }
-    })
-
-    const heatmapData: any[] = []
-    const maxValue = Math.max(...phases.map(phase => phase.count > 0 ? phase.sum / phase.count : 0))
-    
-    phases.forEach((phase, index) => {
-      const avgValue = phase.count > 0 ? phase.sum / phase.count : 0
-      const intensity = maxValue > 0 ? (avgValue / maxValue) : 0
-      
-      heatmapData.push({
-        x: index,
-        y: 0,
-        value: avgValue.toFixed(1),
-        intensity,
-        label: phaseNames[index]
-      })
-    })
-
-    return { 
-      heatmapData, 
-      maxValue, 
-      xLabels: phaseNames,
-      yLabels: ['Moon Phase']
-    }
-  }
-
-  // Process data for mood distribution (1-5 scale)
-  const prepareMoodData = () => {
-    const moodRanges = [
-      { range: '1-2', min: 1, max: 2, color: '#ef4444', label: 'Very Low' },
-      { range: '2-3', min: 2, max: 3, color: '#f97316', label: 'Low' },
-      { range: '3-4', min: 3, max: 4, color: '#eab308', label: 'Neutral' },
-      { range: '4-5', min: 4, max: 5, color: '#22c55e', label: 'Good' },
-      { range: '5', min: 5, max: 5, color: '#10b981', label: 'Excellent' }
+  // Convert moonphase number to string
+  const getMoonPhaseString = (phase?: number): string => {
+    if (!phase) return ''
+    const phases = [
+      'New Moon', 'Waxing Crescent', 'First Quarter', 'Waxing Gibbous',
+      'Full Moon', 'Waning Gibbous', 'Last Quarter', 'Waning Crescent'
     ]
-
-    return moodRanges.map(range => ({
-      ...range,
-      count: data.filter(d => 
-        d.subjectivemood != null && 
-        d.subjectivemood >= range.min && 
-        d.subjectivemood <= range.max
-      ).length
-    }))
+    const index = Math.floor((phase / 360) * 8) % 8
+    return phases[index] || ''
   }
 
-  // Process correlation data with selectable variables
-  const prepareCorrelationData = () => {
-    return data
-      .filter(d => d[correlationX] != null && d[correlationY] != null)
-      .map(d => {
-        const xValue = correlationX === 'sleepavg' ? convertSleepToHours(d[correlationX]) : d[correlationX]
-        const yValue = correlationY === 'sleepavg' ? convertSleepToHours(d[correlationY]) : d[correlationY]
-        
-        return {
-          x: xValue || 0,
-          y: yValue || 0,
-          date: d.date
-        }
-      })
+  return {
+    id: data.id,
+    date: data.date,
+    dayOfWeek: data.day_of_the_week,
+    timeSlots,
+    synchroSum: data.synchrosum,
+    subjectiveSynchro: data.subjectivesynchro,
+    subjectiveMood: data.subjectivemood,
+    productivity: data.productivity,
+    heartRateDaily: data.heartratedaily,
+    heartRateResting: data.heartrateresting,
+    stepsPhone: data.stepsphone,
+    weight: data.weight,
+    sleepAvg: data.sleepavg,
+    sleepQuality: data.sleepwakeupquality,
+    stateHealth: data.statehealth,
+    stateRelationship: data.staterelationship,
+    stateSelfEsteem: data.stateselfesteem,
+    stateIntelligence: data.stateinteligence,
+    stateSocialSkill: data.statesocialskill,
+    stateImmerse: data.stateimmerse,
+    stress: data.stres,
+    stimulants: data.stimmg,
+    alcohol: data.alcohol,
+    calories: data.dietkcal,
+    carbs: data.dietcarbs,
+    protein: data.dietprotein,
+    fats: data.dietfats,
+    moonPhase: getMoonPhaseString(data.moonphase)
   }
-
-  const timelineData = prepareTimelineData()
-  const { heatmapData, xLabels, yLabels } = prepareHeatmapData()
-  const moodData = prepareMoodData()
-  const correlationData = prepareCorrelationData()
-
-  const chartOptions = [
-    { id: 'heatmap', label: 'Smart Heatmap', description: 'Visual patterns across time dimensions', icon: FireIcon },
-    { id: 'timeline', label: 'Multi-Metric Timeline', description: 'Track multiple metrics over time', icon: ChartBarIcon },
-    { id: 'mood', label: 'Mood Distribution', description: 'Your emotional patterns', icon: HeartIcon },
-    { id: 'correlations', label: 'Correlation Explorer', description: 'Discover relationships between metrics', icon: ArrowTrendingUpIcon }
-  ]
-
-  const metricOptions = [
-    { value: 'subjectivesynchro', label: 'Synchronicity', color: '#3399e6' },
-    { value: 'subjectivemood', label: 'Mood', color: '#22c55e' },
-    { value: 'productivity', label: 'Productivity', color: '#339999' },
-    { value: 'sleepavg', label: 'Sleep (hours)', color: '#8b5cf6' },
-    { value: 'stres', label: 'Stress', color: '#f59e0b' }
-  ]
-
-  const heatmapOptions = [
-    { value: 'weeks', label: 'Weekly Pattern', icon: CalendarIcon },
-    { value: 'months', label: 'Monthly Trends', icon: CalendarIcon },
-    { value: 'years', label: 'Yearly Overview', icon: CalendarIcon },
-    { value: 'dayOfWeek', label: 'Day of Week', icon: ClockIcon },
-    { value: 'earthSunDistance', label: 'Earth-Sun Distance', icon: SunIcon },
-    { value: 'moonPhase', label: 'Moon Phases', icon: MoonIcon }
-  ]
-
-  const formatDate = (dateStr: string) => {
-    try {
-      return format(parseISO(dateStr), 'MMM dd')
-    } catch {
-      return dateStr
-    }
-  }
-
-  const getHeatmapColor = (intensity: number) => {
-    if (intensity === 0) return '#f8fafc'
-    if (intensity < 0.2) return '#deeffe'
-    if (intensity < 0.4) return '#b4e2fd'
-    if (intensity < 0.6) return '#7bd0fc'
-    if (intensity < 0.8) return '#3bb9f8'
-    return '#3399e6'
-  }
-
-  const EnhancedHeatmap = () => {
-    const cellSize = heatmapType === 'years' || heatmapType === 'dayOfWeek' || heatmapType === 'earthSunDistance' || heatmapType === 'moonPhase' ? 60 : 40
-    const gap = 2
-
-    return (
-      <div className="space-y-6">
-        <div className="flex flex-wrap justify-center gap-2">
-          {heatmapOptions.map(option => {
-            const Icon = option.icon
-            return (
-              <button
-                key={option.value}
-                onClick={() => setHeatmapType(option.value as HeatmapType)}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-                  heatmapType === option.value
-                    ? 'bg-gradient-primary text-white shadow-soft'
-                    : 'bg-white text-text-secondary border border-gray-200 hover:border-primary-200 hover:text-text-primary'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                <span className="text-sm font-medium">{option.label}</span>
-              </button>
-            )
-          })}
-        </div>
-
-        <div className="text-center">
-          <h3 className="section-subheader">{heatmapOptions.find(h => h.value === heatmapType)?.label} Heatmap</h3>
-          <p className="text-sm text-text-secondary">Darker colors indicate higher synchronicity levels</p>
-        </div>
-        
-        <div className="overflow-x-auto w-full">
-          <div className="flex flex-col items-center min-w-max">
-            {/* Y-axis labels */}
-            <div className="flex">
-              <div className="w-20"></div>
-              <div className="flex space-x-1">
-                {xLabels.map((label, index) => (
-                  <div 
-                    key={index} 
-                    className="text-xs text-text-muted text-center"
-                    style={{ width: cellSize + gap }}
-                  >
-                    {label}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Heatmap grid */}
-            <div className="flex flex-col space-y-1 mt-2">
-              {yLabels.map((yLabel, yIndex) => (
-                <div key={yIndex} className="flex items-center space-x-1">
-                  <div className="w-20 text-xs text-text-muted text-right pr-2">
-                    {yLabel}
-                  </div>
-                  <div className="flex space-x-1">
-                    {xLabels.map((xLabel, xIndex) => {
-                      const cellData = heatmapData.find(d => d.x === xIndex && d.y === yIndex)
-                      const intensity = cellData?.intensity || 0
-                      const value = cellData?.value || 0
-                      const label = cellData?.label || `${xLabel}`
-                      
-                      return (
-                        <div
-                          key={`${yIndex}-${xIndex}`}
-                          className="group relative cursor-pointer transition-all duration-200 hover:scale-110 hover:shadow-soft rounded-lg tooltip flex items-center justify-center text-xs font-semibold"
-                          style={{
-                            width: cellSize,
-                            height: cellSize,
-                            backgroundColor: getHeatmapColor(intensity),
-                            border: '1px solid #e5e7eb',
-                            color: intensity > 0.5 ? 'white' : '#374151'
-                          }}
-                          data-tooltip={`${label}: ${value}`}
-                        >
-                          {heatmapType === 'dayOfWeek' || heatmapType === 'earthSunDistance' || heatmapType === 'moonPhase' || heatmapType === 'years' ? value : ''}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Legend */}
-        <div className="flex items-center justify-center space-x-4 text-xs text-text-secondary">
-          <span>Less</span>
-          <div className="flex space-x-1">
-            {[0, 0.2, 0.4, 0.6, 0.8, 1].map(intensity => (
-              <div
-                key={intensity}
-                className="w-4 h-4 rounded"
-                style={{ backgroundColor: getHeatmapColor(intensity) }}
-              />
-            ))}
-          </div>
-          <span>More</span>
-          <span className="ml-4 badge badge-primary">Range: 1-5</span>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-8">
-      <div className="text-center">
-        <h2 className="section-header">Enhanced Analytics</h2>
-        <p className="text-text-secondary text-lg">
-          Discover patterns and insights in your synchronicity journey
-        </p>
-      </div>
-
-      {/* Chart Selection */}
-      <div className="flex flex-wrap justify-center gap-3">
-        {chartOptions.map(option => {
-          const Icon = option.icon
-          return (
-            <button
-              key={option.id}
-              onClick={() => setSelectedChart(option.id as any)}
-              className={`group relative px-6 py-4 rounded-xl transition-all duration-200 ${
-                selectedChart === option.id
-                  ? 'bg-gradient-primary text-white shadow-medium'
-                  : 'bg-white text-text-secondary border border-gray-200 hover:border-primary-300 hover:shadow-soft hover:scale-105'
-              }`}
-            >
-              <div className="flex items-center space-x-3">
-                <Icon className="h-6 w-6" />
-                <div className="text-left">
-                  <div className="font-semibold">{option.label}</div>
-                  <div className={`text-sm ${selectedChart === option.id ? 'text-white/80' : 'text-text-muted'}`}>
-                    {option.description}
-                  </div>
-                </div>
-              </div>
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Charts */}
-      <div className="chart-container">
-        {selectedChart === 'heatmap' && <EnhancedHeatmap />}
-
-        {selectedChart === 'timeline' && (
-          <div className="space-y-6">
-            <div className="flex flex-wrap justify-center gap-2">
-              <span className="text-sm font-medium text-text-primary py-2">Select metrics:</span>
-              {metricOptions.map(metric => (
-                <button
-                  key={metric.value}
-                  onClick={() => {
-                    const currentMetrics = [...timelineMetrics]
-                    const index = currentMetrics.indexOf(metric.value as TimelineMetric)
-                    if (index >= 0) {
-                      currentMetrics.splice(index, 1)
-                    } else {
-                      currentMetrics.push(metric.value as TimelineMetric)
-                    }
-                    setTimelineMetrics(currentMetrics)
-                  }}
-                  className={`px-4 py-2 rounded-lg text-sm transition-all duration-200 ${
-                    timelineMetrics.includes(metric.value as TimelineMetric)
-                      ? 'text-white shadow-soft'
-                      : 'bg-white text-text-secondary border border-gray-200 hover:border-primary-200'
-                  }`}
-                  style={timelineMetrics.includes(metric.value as TimelineMetric) ? {
-                    backgroundColor: metric.color
-                  } : {}}
-                >
-                  {metric.label}
-                </button>
-              ))}
-            </div>
-            
-            <h3 className="section-subheader text-center">Multi-Metric Timeline</h3>
-            <div className="h-96">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={timelineData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f4f7" />
-                  <XAxis 
-                    dataKey="date" 
-                    tickFormatter={formatDate}
-                    tick={{ fontSize: 12, fill: '#4a5568' }}
-                  />
-                  <YAxis 
-                    tick={{ fontSize: 12, fill: '#4a5568' }}
-                    domain={[0, 'dataMax']}
-                  />
-                  <Tooltip 
-                    labelFormatter={(value) => formatDate(value as string)}
-                    formatter={(value, name) => [
-                      name === 'sleepavg' ? `${Number(value).toFixed(1)}h` : Number(value).toFixed(1),
-                      metricOptions.find(m => m.value === name)?.label || name
-                    ]}
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                    }}
-                  />
-                  {timelineMetrics.map(metric => {
-                    const metricConfig = metricOptions.find(m => m.value === metric)
-                    return (
-                      <Line 
-                        key={metric}
-                        type="monotone" 
-                        dataKey={metric} 
-                        stroke={metricConfig?.color || '#3399e6'} 
-                        strokeWidth={3}
-                        name={metric}
-                        dot={{ fill: metricConfig?.color, strokeWidth: 2, r: 4 }}
-                        connectNulls={false}
-                      />
-                    )
-                  })}
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
-
-        {selectedChart === 'mood' && (
-          <div>
-            <h3 className="section-subheader text-center">Mood Distribution (1-5 Scale)</h3>
-            <div className="h-96 flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={moodData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ count, label }) => `${label}: ${count}`}
-                    outerRadius={120}
-                    fill="#8884d8"
-                    dataKey="count"
-                  >
-                    {moodData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    formatter={(value) => [value, 'Count']}
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
-
-        {selectedChart === 'correlations' && (
-          <div className="space-y-6">
-            <div className="flex flex-wrap justify-center gap-4">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium text-text-primary">X-Axis:</span>
-                <select
-                  value={correlationX}
-                  onChange={(e) => setCorrelationX(e.target.value as CorrelationMetric)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  {metricOptions.map(metric => (
-                    <option key={metric.value} value={metric.value}>{metric.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium text-text-primary">Y-Axis:</span>
-                <select
-                  value={correlationY}
-                  onChange={(e) => setCorrelationY(e.target.value as CorrelationMetric)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  {metricOptions.map(metric => (
-                    <option key={metric.value} value={metric.value}>{metric.label}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            
-            <h3 className="section-subheader text-center">
-              {metricOptions.find(m => m.value === correlationX)?.label} vs {metricOptions.find(m => m.value === correlationY)?.label}
-            </h3>
-            <div className="h-96">
-              <ResponsiveContainer width="100%" height="100%">
-                <ScatterChart data={correlationData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f4f7" />
-                  <XAxis 
-                    type="number" 
-                    dataKey="x" 
-                    name={metricOptions.find(m => m.value === correlationX)?.label}
-                    tick={{ fontSize: 12, fill: '#4a5568' }}
-                    domain={[0, 'dataMax']}
-                  />
-                  <YAxis 
-                    type="number" 
-                    dataKey="y" 
-                    name={metricOptions.find(m => m.value === correlationY)?.label}
-                    tick={{ fontSize: 12, fill: '#4a5568' }}
-                    domain={[0, 'dataMax']}
-                  />
-                  <Tooltip 
-                    cursor={{ strokeDasharray: '3 3' }}
-                    formatter={(value, name) => [
-                      Number(value).toFixed(1), 
-                      name === 'x' ? metricOptions.find(m => m.value === correlationX)?.label : 
-                      metricOptions.find(m => m.value === correlationY)?.label
-                    ]}
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                    }}
-                  />
-                  <Scatter name="Data Points" fill="#3399e6" />
-                </ScatterChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  )
 }
+
+// Helper function to convert display format back to DB format
+export const convertFromDisplay = (data: SynchroDataDisplay): Partial<SynchroData> => {
+  const dbData: Partial<SynchroData> = {
+    id: data.id,
+    date: data.date,
+    day_of_the_week: data.dayOfWeek,
+    synchrosum: data.synchroSum,
+    subjectivesynchro: data.subjectiveSynchro,
+    subjectivemood: data.subjectiveMood,
+    productivity: data.productivity,
+    heartratedaily: data.heartRateDaily,
+    heartrateresting: data.heartRateResting,
+    stepsphone: data.stepsPhone,
+    weight: data.weight,
+    sleepavg: data.sleepAvg,
+    sleepwakeupquality: data.sleepQuality,
+    statehealth: data.stateHealth,
+    staterelationship: data.stateRelationship,
+    stateselfesteem: data.stateSelfEsteem,
+    stateinteligence: data.stateIntelligence,
+    statesocialskill: data.stateSocialSkill,
+    stateimmerse: data.stateImmerse,
+    stres: data.stress,
+    stimmg: data.stimulants,
+    alcohol: data.alcohol,
+    dietkcal: data.calories,
+    dietcarbs: data.carbs,
+    dietprotein: data.protein,
+    dietfats: data.fats
+  }
+
+  // Add time slots
+  if (data.timeSlots) {
+    Object.entries(data.timeSlots).forEach(([time, value]) => {
+      dbData[time as keyof SynchroData] = value
+    })
+  }
+
+  return dbData
+}
+
+// Helper function to handle database errors
+const handleDatabaseError = (error: any, operation: string): never => {
+  console.error(`Database error during ${operation}:`, error)
+  
+  if (error.code === 'PGRST301') {
+    throw new DatabaseError('Database connection failed. Please check your internet connection.')
+  }
+  
+  if (error.code === '23505') {
+    throw new DatabaseError('A record with this date already exists.')
+  }
+  
+  if (error.code === '23514') {
+    throw new DatabaseError('Invalid data provided. Please check your input values.')
+  }
+  
+  throw new DatabaseError(error.message || `Failed to ${operation}`)
+}
+
+/**
+ * Fetch all synchronicity data with optional sorting and filtering
+ * FIXED: Remove Supabase's default 1000 record limit by setting explicit high limit
+ */
+export const fetchAllData = async (options: QueryOptions = {}): Promise<SynchroData[]> => {
+  try {
+    const {
+      orderBy = 'date',
+      ascending = false,
+      limit = 10000, // Set high limit to fetch all records (adjust if you have more than 10k records)
+      offset
+    } = options
+
+    let query = supabase
+      .from('synchrodata')
+      .select('*')
+      .order(orderBy, { ascending })
+      .limit(limit) // Always set a limit to override Supabase's default 1000
+
+    if (offset) {
+      query = query.range(offset, offset + limit - 1)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+      handleDatabaseError(error, 'fetch all data')
+    }
+
+    return data || []
+  } catch (error) {
+    if (error instanceof DatabaseError) {
+      throw error
+    }
+    handleDatabaseError(error, 'fetch all data')
+  }
+}
+
+/**
+ * Alternative: Fetch all data using pagination to handle very large datasets
+ */
+export const fetchAllDataPaginated = async (options: QueryOptions = {}): Promise<SynchroData[]> => {
+  try {
+    const {
+      orderBy = 'date',
+      ascending = false
+    } = options
+
+    const pageSize = 1000
+    let allData: SynchroData[] = []
+    let page = 0
+    let hasMore = true
+
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('synchrodata')
+        .select('*')
+        .order(orderBy, { ascending })
+        .range(page * pageSize, (page + 1) * pageSize - 1)
+
+      if (error) {
+        handleDatabaseError(error, 'fetch all data paginated')
+      }
+
+      if (data && data.length > 0) {
+        allData = [...allData, ...data]
+        hasMore = data.length === pageSize // If we got a full page, there might be more
+        page++
+      } else {
+        hasMore = false
+      }
+    }
+
+    return allData
+  } catch (error) {
+    if (error instanceof DatabaseError) {
+      throw error
+    }
+    handleDatabaseError(error, 'fetch all data paginated')
+  }
+}
+
+/**
+ * Fetch data by date range with optional filters
+ */
+export const fetchDataByDateRange = async (
+  startDate: string, 
+  endDate: string, 
+  options: QueryOptions = {}
+): Promise<SynchroData[]> => {
+  try {
+    const {
+      orderBy = 'date',
+      ascending = false,
+      limit = 10000, // Set high limit
+      offset
+    } = options
+
+    let query = supabase
+      .from('synchrodata')
+      .select('*')
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .order(orderBy, { ascending })
+      .limit(limit)
+
+    if (offset) {
+      query = query.range(offset, offset + limit - 1)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+      handleDatabaseError(error, 'fetch data by date range')
+    }
+
+    return data || []
+  } catch (error) {
+    if (error instanceof DatabaseError) {
+      throw error
+    }
+    handleDatabaseError(error, 'fetch data by date range')
+  }
+}
+
+/**
+ * Fetch data for a specific date
+ */
+export const fetchDataByDate = async (date: string): Promise<SynchroData | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('synchrodata')
+      .select('*')
+      .eq('date', date)
+      .single()
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+      handleDatabaseError(error, 'fetch data by date')
+    }
+
+    return data
+  } catch (error) {
+    if (error instanceof DatabaseError) {
+      throw error
+    }
+    handleDatabaseError(error, 'fetch data by date')
+  }
+}
+
+/**
+ * Insert new synchronicity data
+ */
+export const insertSynchroData = async (data: Partial<SynchroData>): Promise<SynchroData> => {
+  try {
+    // Validate required fields
+    if (!data.date) {
+      throw new DatabaseError('Date is required')
+    }
+
+    // Check if date already exists
+    const existingData = await fetchDataByDate(data.date)
+    if (existingData) {
+      throw new DatabaseError('An entry for this date already exists')
+    }
+
+    // Calculate synchrosum if time slots are provided
+    const timeSlots = [
+      '00:00', '01:01', '02:02', '03:03', '04:04', '05:05', '06:06', 
+      '07:07', '08:08', '09:09', '10:10', '11:11', '12:12',
+      '13:13', '14:14', '15:15', '16:16', '17:17', '18:18',
+      '19:19', '20:20', '21:21', '22:22', '23:23'
+    ]
+    
+    const synchrosum = timeSlots.reduce((sum, time) => {
+      return sum + (data[time as keyof SynchroData] as number || 0)
+    }, 0)
+
+    const dataToInsert = {
+      ...data,
+      synchrosum
+    }
+
+    const { data: result, error } = await supabase
+      .from('synchrodata')
+      .insert([dataToInsert])
+      .select()
+      .single()
+
+    if (error) {
+      handleDatabaseError(error, 'insert data')
+    }
+
+    return result
+  } catch (error) {
+    if (error instanceof DatabaseError) {
+      throw error
+    }
+    handleDatabaseError(error, 'insert data')
+  }
+}
+
+/**
+ * Update existing synchronicity data
+ */
+export const updateSynchroData = async (id: number, data: Partial<SynchroData>): Promise<SynchroData> => {
+  try {
+    // Calculate synchrosum if time slots are updated
+    const timeSlots = [
+      '00:00', '01:01', '02:02', '03:03', '04:04', '05:05', '06:06', 
+      '07:07', '08:08', '09:09', '10:10', '11:11', '12:12',
+      '13:13', '14:14', '15:15', '16:16', '17:17', '18:18',
+      '19:19', '20:20', '21:21', '22:22', '23:23'
+    ]
+    
+    const hasTimeSlotData = timeSlots.some(time => data[time as keyof SynchroData] !== undefined)
+    
+    let dataToUpdate = { ...data }
+    
+    if (hasTimeSlotData) {
+      // Fetch current data to calculate new synchrosum
+      const currentData = await fetchDataById(id)
+      if (currentData) {
+        const mergedData = { ...currentData, ...data }
+        const synchrosum = timeSlots.reduce((sum, time) => {
+          return sum + (mergedData[time as keyof SynchroData] as number || 0)
+        }, 0)
+        dataToUpdate.synchrosum = synchrosum
+      }
+    }
+
+    const { data: result, error } = await supabase
+      .from('synchrodata')
+      .update(dataToUpdate)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      handleDatabaseError(error, 'update data')
+    }
+
+    return result
+  } catch (error) {
+    if (error instanceof DatabaseError) {
+      throw error
+    }
+    handleDatabaseError(error, 'update data')
+  }
+}
+
+/**
+ * Delete synchronicity data by ID
+ */
+export const deleteSynchroData = async (id: number): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('synchrodata')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      handleDatabaseError(error, 'delete data')
+    }
+  } catch (error) {
+    if (error instanceof DatabaseError) {
+      throw error
+    }
+    handleDatabaseError(error, 'delete data')
+  }
+}
+
+/**
+ * Fetch data by ID
+ */
+export const fetchDataById = async (id: number): Promise<SynchroData | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('synchrodata')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error && error.code !== 'PGRST116') {
+      handleDatabaseError(error, 'fetch data by ID')
+    }
+
+    return data
+  } catch (error) {
+    if (error instanceof DatabaseError) {
+      throw error
+    }
+    handleDatabaseError(error, 'fetch data by ID')
+  }
+}
+
+/**
+ * Get database statistics
+ */
+export const getDatabaseStats = async (): Promise<{
+  totalEntries: number
+  dateRange: { start: string | null; end: string | null }
+  lastEntry: string | null
+}> => {
+  try {
+    const { count, error: countError } = await supabase
+      .from('synchrodata')
+      .select('*', { count: 'exact', head: true })
+
+    if (countError) {
+      handleDatabaseError(countError, 'get database stats')
+    }
+
+    const { data: dateData, error: dateError } = await supabase
+      .from('synchrodata')
+      .select('date')
+      .order('date', { ascending: true })
+      .limit(1)
+
+    const { data: lastDateData, error: lastDateError } = await supabase
+      .from('synchrodata')
+      .select('date')
+      .order('date', { ascending: false })
+      .limit(1)
+
+    if (dateError || lastDateError) {
+      handleDatabaseError(dateError || lastDateError, 'get database stats')
+    }
+
+    return {
+      totalEntries: count || 0,
+      dateRange: {
+        start: dateData?.[0]?.date || null,
+        end: lastDateData?.[0]?.date || null
+      },
+      lastEntry: lastDateData?.[0]?.date || null
+    }
+  } catch (error) {
+    if (error instanceof DatabaseError) {
+      throw error
+    }
+    handleDatabaseError(error, 'get database stats')
+  }
+}
+
+/**
+ * Check database connection
+ */
+export const checkConnection = async (): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('synchrodata')
+      .select('id')
+      .limit(1)
+      .single()
+
+    // Even if no data exists, as long as there's no connection error, we're good
+    return error?.code !== 'PGRST301'
+  } catch (error) {
+    console.error('Database connection check failed:', error)
+    return false
+  }
+}
+
+// Export the time slots array for use in components
+export const TIME_SLOTS = [
+  '00:00', '01:01', '02:02', '03:03', '04:04', '05:05', '06:06', 
+  '07:07', '08:08', '09:09', '10:10', '11:11', '12:12',
+  '13:13', '14:14', '15:15', '16:16', '17:17', '18:18',
+  '19:19', '20:20', '21:21', '22:22', '23:23'
+] as const
+
+export type TimeSlot = typeof TIME_SLOTS[number]
