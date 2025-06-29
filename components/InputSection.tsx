@@ -118,7 +118,7 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
       const dataToSubmit: Partial<SynchroData> = {
         ...formData,
         synchrosum,
-        sleepavg: formData.sleepavg ? formData.sleepavg * 60 : undefined // Convert hours to minutes
+        ...(formData.sleepavg && { sleepavg: formData.sleepavg * 60 }) // Only include if sleepavg exists
       }
 
       await insertSynchroData(dataToSubmit)
