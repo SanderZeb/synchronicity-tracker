@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { SynchroData, fetchAllData} from '../lib/supabase'
+import { SynchroData, fetchAllData, fetchAllDataPaginated} from '../lib/supabase'
 import { convertSleepToHours } from '../lib/utils'
 import AnalyticsSection from '../components/AnalyticsSection'
 import InputSection from '../components/InputSection'
@@ -35,9 +35,21 @@ export default function Dashboard() {
   const loadData = async () => {
     try {
       setLoading(true)
-      const fetchedData = await fetchAllData()
-      setData(fetchedData)
       setError(null)
+      
+      // Try to fetch all data with high limit first
+      try {
+        console.log('Fetching all data with high limit...')
+        const fetchedData = await fetchAllData({ limit: 20000 }) // Set very high limit
+        console.log(`Successfully loaded ${fetchedData.length} records`)
+        setData(fetchedData)
+      } catch (limitError) {
+        console.warn('High limit fetch failed, trying paginated approach:', limitError)
+        // Fallback to paginated approach if high limit fails
+        const fetchedData = await fetchAllDataPaginated()
+        console.log(`Successfully loaded ${fetchedData.length} records via pagination`)
+        setData(fetchedData)
+      }
     } catch (err) {
       setError('Failed to load data from database')
       console.error('Error loading data:', err)
@@ -338,6 +350,9 @@ export default function Dashboard() {
               <p className="text-text-secondary text-sm">
                 Download your synchronicity records in your preferred format
               </p>
+              <div className="mt-2 text-sm font-medium text-primary-600">
+                Ready to export {data.length} records
+              </div>
             </div>
             
             <div className="space-y-4 mb-6">

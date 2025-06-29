@@ -107,11 +107,14 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
         weeklyCounts.set(weekKey, 0)
       }
       
-      const weekValues = weeklyData.get(weekKey)!
-      const count = weeklyCounts.get(weekKey)!
+      const weekValues = weeklyData.get(weekKey)
+      const count = weeklyCounts.get(weekKey)
       
-      weekValues[dayOfWeek] += d.subjectivesynchro || 0
-      weeklyCounts.set(weekKey, count + 1)
+      // FIXED: Add proper type safety checks
+      if (weekValues && dayOfWeek >= 0 && dayOfWeek < 7 && weekValues[dayOfWeek] !== undefined && count !== undefined) {
+        weekValues[dayOfWeek] += d.subjectivesynchro || 0
+        weeklyCounts.set(weekKey, count + 1)
+      }
     })
 
     const heatmapData: any[] = []
@@ -119,17 +122,19 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
     const maxValue = Math.max(...Array.from(weeklyData.values()).flat().filter(v => v > 0))
     
     weeks.forEach((weekKey, weekIndex) => {
-      const weekValues = weeklyData.get(weekKey)!
-      weekValues.forEach((value, dayIndex) => {
-        const intensity = maxValue > 0 ? (value / maxValue) : 0
-        heatmapData.push({
-          x: dayIndex,
-          y: weekIndex,
-          value,
-          intensity,
-          label: `Week ${format(parseISO(weekKey), 'MMM dd')}, ${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][dayIndex]}`
+      const weekValues = weeklyData.get(weekKey)
+      if (weekValues) {
+        weekValues.forEach((value, dayIndex) => {
+          const intensity = maxValue > 0 ? (value / maxValue) : 0
+          heatmapData.push({
+            x: dayIndex,
+            y: weekIndex,
+            value,
+            intensity,
+            label: `Week ${format(parseISO(weekKey), 'MMM dd')}, ${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][dayIndex]}`
+          })
         })
-      })
+      }
     })
 
     return { 
@@ -153,8 +158,13 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
         monthlyCounts.set(monthKey, 0)
       }
       
-      monthlyData.set(monthKey, monthlyData.get(monthKey)! + (d.subjectivesynchro || 0))
-      monthlyCounts.set(monthKey, monthlyCounts.get(monthKey)! + 1)
+      const currentValue = monthlyData.get(monthKey)
+      const currentCount = monthlyCounts.get(monthKey)
+      
+      if (currentValue !== undefined && currentCount !== undefined) {
+        monthlyData.set(monthKey, currentValue + (d.subjectivesynchro || 0))
+        monthlyCounts.set(monthKey, currentCount + 1)
+      }
     })
 
     const heatmapData: any[] = []
@@ -162,16 +172,21 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
     const maxValue = Math.max(...Array.from(monthlyData.values()))
     
     months.forEach((monthKey, index) => {
-      const value = monthlyData.get(monthKey)! / (monthlyCounts.get(monthKey)! || 1)
-      const intensity = maxValue > 0 ? (value / maxValue) : 0
+      const totalValue = monthlyData.get(monthKey)
+      const count = monthlyCounts.get(monthKey)
       
-      heatmapData.push({
-        x: index % 12,
-        y: Math.floor(index / 12),
-        value: value.toFixed(1),
-        intensity,
-        label: format(parseISO(monthKey + '-01'), 'MMM yyyy')
-      })
+      if (totalValue !== undefined && count !== undefined && count > 0) {
+        const value = totalValue / count
+        const intensity = maxValue > 0 ? (value / maxValue) : 0
+        
+        heatmapData.push({
+          x: index % 12,
+          y: Math.floor(index / 12),
+          value: value.toFixed(1),
+          intensity,
+          label: format(parseISO(monthKey + '-01'), 'MMM yyyy')
+        })
+      }
     })
 
     return { 
@@ -195,8 +210,13 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
         yearlyCounts.set(yearKey, 0)
       }
       
-      yearlyData.set(yearKey, yearlyData.get(yearKey)! + (d.subjectivesynchro || 0))
-      yearlyCounts.set(yearKey, yearlyCounts.get(yearKey)! + 1)
+      const currentValue = yearlyData.get(yearKey)
+      const currentCount = yearlyCounts.get(yearKey)
+      
+      if (currentValue !== undefined && currentCount !== undefined) {
+        yearlyData.set(yearKey, currentValue + (d.subjectivesynchro || 0))
+        yearlyCounts.set(yearKey, currentCount + 1)
+      }
     })
 
     const heatmapData: any[] = []
@@ -204,16 +224,21 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
     const maxValue = Math.max(...Array.from(yearlyData.values()))
     
     years.forEach((yearKey, index) => {
-      const value = yearlyData.get(yearKey)! / (yearlyCounts.get(yearKey)! || 1)
-      const intensity = maxValue > 0 ? (value / maxValue) : 0
+      const totalValue = yearlyData.get(yearKey)
+      const count = yearlyCounts.get(yearKey)
       
-      heatmapData.push({
-        x: index,
-        y: 0,
-        value: value.toFixed(1),
-        intensity,
-        label: yearKey
-      })
+      if (totalValue !== undefined && count !== undefined && count > 0) {
+        const value = totalValue / count
+        const intensity = maxValue > 0 ? (value / maxValue) : 0
+        
+        heatmapData.push({
+          x: index,
+          y: 0,
+          value: value.toFixed(1),
+          intensity,
+          label: yearKey
+        })
+      }
     })
 
     return { 
@@ -225,25 +250,24 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
   }
 
   const prepareDayOfWeekHeatmap = (filteredData: SynchroData[]) => {
-    const dayData = new Array(7).fill(0)
-    const dayCounts = new Array(7).fill(0)
+    const dayData = new Array(7).fill(0).map(() => ({ sum: 0, count: 0 }))
+    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
     
     filteredData.forEach(d => {
       if (d.day_of_the_week) {
-        const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
         const dayIndex = dayNames.indexOf(d.day_of_the_week)
-        if (dayIndex !== -1) {
-          dayData[dayIndex] += d.subjectivesynchro || 0
-          dayCounts[dayIndex]++
+        if (dayIndex !== -1 && dayData[dayIndex]) {
+          dayData[dayIndex].sum += d.subjectivesynchro || 0
+          dayData[dayIndex].count++
         }
       }
     })
 
     const heatmapData: any[] = []
-    const maxValue = Math.max(...dayData.map((sum, i) => dayCounts[i] > 0 ? sum / dayCounts[i] : 0))
+    const maxValue = Math.max(...dayData.map((data) => data.count > 0 ? data.sum / data.count : 0))
     
-    dayData.forEach((sum, index) => {
-      const avgValue = dayCounts[index] > 0 ? sum / dayCounts[index] : 0
+    dayData.forEach((data, index) => {
+      const avgValue = data.count > 0 ? data.sum / data.count : 0
       const intensity = maxValue > 0 ? (avgValue / maxValue) : 0
       
       heatmapData.push({
@@ -279,8 +303,10 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
     filteredData.forEach(d => {
       if (d.earthsundistance != null && d.subjectivesynchro != null) {
         const binIndex = Math.min(3, Math.floor((d.earthsundistance - minDist) / binSize))
-        bins[binIndex].sum += d.subjectivesynchro
-        bins[binIndex].count++
+        if (bins[binIndex]) {
+          bins[binIndex].sum += d.subjectivesynchro
+          bins[binIndex].count++
+        }
       }
     })
 
@@ -315,8 +341,10 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
     filteredData.forEach(d => {
       if (d.moonphase != null && d.subjectivesynchro != null) {
         const phaseIndex = Math.floor((d.moonphase / 45)) % 8
-        phases[phaseIndex].sum += d.subjectivesynchro
-        phases[phaseIndex].count++
+        if (phases[phaseIndex]) {
+          phases[phaseIndex].sum += d.subjectivesynchro
+          phases[phaseIndex].count++
+        }
       }
     })
 

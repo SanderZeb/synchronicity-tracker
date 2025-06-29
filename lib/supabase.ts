@@ -301,13 +301,14 @@ const handleDatabaseError = (error: any, operation: string): never => {
 
 /**
  * Fetch all synchronicity data with optional sorting and filtering
+ * FIXED: Remove Supabase's default 1000 record limit by setting explicit high limit
  */
 export const fetchAllData = async (options: QueryOptions = {}): Promise<SynchroData[]> => {
   try {
     const {
       orderBy = 'date',
       ascending = false,
-      limit,
+      limit = 10000, // Set high limit to fetch all records (adjust if you have more than 10k records)
       offset
     } = options
 
@@ -315,13 +316,10 @@ export const fetchAllData = async (options: QueryOptions = {}): Promise<SynchroD
       .from('synchrodata')
       .select('*')
       .order(orderBy, { ascending })
-
-    if (limit) {
-      query = query.limit(limit)
-    }
+      .limit(limit) // Always set a limit to override Supabase's default 1000
 
     if (offset) {
-      query = query.range(offset, offset + (limit || 50) - 1)
+      query = query.range(offset, offset + limit - 1)
     }
 
     const { data, error } = await query
@@ -340,6 +338,50 @@ export const fetchAllData = async (options: QueryOptions = {}): Promise<SynchroD
 }
 
 /**
+ * Alternative: Fetch all data using pagination to handle very large datasets
+ */
+export const fetchAllDataPaginated = async (options: QueryOptions = {}): Promise<SynchroData[]> => {
+  try {
+    const {
+      orderBy = 'date',
+      ascending = false
+    } = options
+
+    const pageSize = 1000
+    let allData: SynchroData[] = []
+    let page = 0
+    let hasMore = true
+
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('synchrodata')
+        .select('*')
+        .order(orderBy, { ascending })
+        .range(page * pageSize, (page + 1) * pageSize - 1)
+
+      if (error) {
+        handleDatabaseError(error, 'fetch all data paginated')
+      }
+
+      if (data && data.length > 0) {
+        allData = [...allData, ...data]
+        hasMore = data.length === pageSize // If we got a full page, there might be more
+        page++
+      } else {
+        hasMore = false
+      }
+    }
+
+    return allData
+  } catch (error) {
+    if (error instanceof DatabaseError) {
+      throw error
+    }
+    handleDatabaseError(error, 'fetch all data paginated')
+  }
+}
+
+/**
  * Fetch data by date range with optional filters
  */
 export const fetchDataByDateRange = async (
@@ -351,7 +393,7 @@ export const fetchDataByDateRange = async (
     const {
       orderBy = 'date',
       ascending = false,
-      limit,
+      limit = 10000, // Set high limit
       offset
     } = options
 
@@ -361,13 +403,10 @@ export const fetchDataByDateRange = async (
       .gte('date', startDate)
       .lte('date', endDate)
       .order(orderBy, { ascending })
-
-    if (limit) {
-      query = query.limit(limit)
-    }
+      .limit(limit)
 
     if (offset) {
-      query = query.range(offset, offset + (limit || 50) - 1)
+      query = query.range(offset, offset + limit - 1)
     }
 
     const { data, error } = await query
