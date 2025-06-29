@@ -410,7 +410,7 @@ export function useKeyboardShortcut(
 ) {
   useEffect(() => {
     function handleKeyPress(event: KeyboardEvent) {
-      const pressedKeys = []
+      const pressedKeys: string[] = []
       
       if (event.ctrlKey || event.metaKey) pressedKeys.push('ctrl')
       if (event.shiftKey) pressedKeys.push('shift')
