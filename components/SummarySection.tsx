@@ -1,7 +1,7 @@
 'use client'
 
 import { SynchroData } from '../lib/supabase'
-import { convertSleepToHours, calculateAverage, formatDate, getInsightText, getStatusColor } from '../lib/utils'
+import { convertSleepToHours, formatDate, getInsightText, getStatusColor } from '../lib/utils'
 import {
   BoltIcon,
   HeartIcon,
