@@ -1,7 +1,7 @@
 // components/UserMenu.tsx
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useClickOutside } from '../lib/hooks'
 import {
