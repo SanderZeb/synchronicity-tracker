@@ -22,7 +22,7 @@ export const formatDate = (dateStr: string | undefined, formatString: string = '
   if (!dateStr) return 'N/A'
   try {
     const date = parseISO(dateStr)
-    if (!isValid(date)) return dateStr
+    if (!isValid(date) || isNaN(date.getTime())) return dateStr
     return format(date, formatString)
   } catch {
     return dateStr
@@ -82,8 +82,10 @@ export const calculateStreak = (data: SynchroData[], field: keyof SynchroData, t
   const sortedData = data
     .filter(d => d.date && d[field] != null)
     .sort((a, b) => {
-      const dateA = a.date ? new Date(a.date).getTime() : 0
-      const dateB = b.date ? new Date(b.date).getTime() : 0
+      if (!a.date || !b.date) return 0
+      const dateA = new Date(a.date).getTime()
+      const dateB = new Date(b.date).getTime()
+      if (isNaN(dateA) || isNaN(dateB)) return 0
       return dateB - dateA
     })
   
@@ -106,8 +108,10 @@ export const calculateTrend = (data: SynchroData[], field: keyof SynchroData, da
   const sortedData = data
     .filter(d => d.date && d[field] != null)
     .sort((a, b) => {
-      const dateA = a.date ? new Date(a.date).getTime() : 0
-      const dateB = b.date ? new Date(b.date).getTime() : 0
+      if (!a.date || !b.date) return 0
+      const dateA = new Date(a.date).getTime()
+      const dateB = new Date(b.date).getTime()
+      if (isNaN(dateA) || isNaN(dateB)) return 0
       return dateB - dateA
     })
   
@@ -174,6 +178,8 @@ export const aggregateDataByWeeks = (data: SynchroData[]) => {
       if (isNaN(date.getTime())) return // Skip invalid dates
       
       const weekStart = startOfWeek(date, { weekStartsOn: 1 })
+      if (!weekStart || isNaN(weekStart.getTime())) return // Validate weekStart
+      
       const weekKey = format(weekStart, 'yyyy-MM-dd')
       
       if (!weeklyData.has(weekKey)) {
@@ -207,7 +213,10 @@ export const aggregateDataByMonths = (data: SynchroData[]) => {
       const date = new Date(d.date)
       if (isNaN(date.getTime())) return // Skip invalid dates
       
-      const monthKey = format(startOfMonth(date), 'yyyy-MM')
+      const monthStart = startOfMonth(date)
+      if (!monthStart || isNaN(monthStart.getTime())) return // Validate monthStart
+      
+      const monthKey = format(monthStart, 'yyyy-MM')
       
       if (!monthlyData.has(monthKey)) {
         monthlyData.set(monthKey, { sum: 0, count: 0 })
@@ -240,7 +249,10 @@ export const aggregateDataByYears = (data: SynchroData[]) => {
       const date = new Date(d.date)
       if (isNaN(date.getTime())) return // Skip invalid dates
       
-      const yearKey = format(startOfYear(date), 'yyyy')
+      const yearStart = startOfYear(date)
+      if (!yearStart || isNaN(yearStart.getTime())) return // Validate yearStart
+      
+      const yearKey = format(yearStart, 'yyyy')
       
       if (!yearlyData.has(yearKey)) {
         yearlyData.set(yearKey, { sum: 0, count: 0 })
@@ -533,7 +545,7 @@ export const debounce = <T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): ((...args: Parameters<T>) => void) => {
-  let timeout: NodeJS.Timeout
+  let timeout: ReturnType<typeof setTimeout>
   return (...args: Parameters<T>) => {
     clearTimeout(timeout)
     timeout = setTimeout(() => func(...args), wait)
@@ -544,7 +556,7 @@ export const debounce = <T extends (...args: any[]) => any>(
  * Generate random ID for temporary use
  */
 export const generateId = (): string => {
-  return Math.random().toString(36).substr(2, 9)
+  return Math.random().toString(36).slice(2, 11)
 }
 
 /**
