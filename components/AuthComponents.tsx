@@ -129,11 +129,19 @@ export const AuthModal = ({
     setFormData(prev => ({ ...prev, [field]: value }))
     // Clear specific field error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }))
+      setErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors[field]
+        return newErrors
+      })
     }
     // Clear general error
     if (errors.general) {
-      setErrors(prev => ({ ...prev, general: undefined }))
+      setErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors.general
+        return newErrors
+      })
     }
   }
 
