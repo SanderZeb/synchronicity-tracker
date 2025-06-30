@@ -577,7 +577,7 @@ export const isWeekend = (dateStr: string): boolean => {
   const day = date.getDay()
   return day === 0 || day === 6 // Sunday or Saturday
 }
-
+ 
 /**
  * Get relative time string
  */
