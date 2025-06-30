@@ -1,7 +1,7 @@
 // components/AuthGuard.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { AuthModal, LoginPrompt } from './AuthComponents'
 import LoadingSpinner from './LoadingSpinner'
