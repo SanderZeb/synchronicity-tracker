@@ -584,7 +584,13 @@ export const getPercentage = (value: number, min: number, max: number): number =
  * Get time of day category
  */
 export const getTimeCategory = (time: string): string => {
-  const hour = parseInt(time.split(':')[0])
+  if (!time || typeof time !== 'string') return 'Unknown'
+  
+  const timeParts = time.split(':')
+  if (timeParts.length === 0 || !timeParts[0]) return 'Unknown'
+  
+  const hour = parseInt(timeParts[0], 10)
+  if (isNaN(hour)) return 'Unknown'
   
   if (hour >= 6 && hour < 12) return 'Morning'
   if (hour >= 12 && hour < 17) return 'Afternoon'
