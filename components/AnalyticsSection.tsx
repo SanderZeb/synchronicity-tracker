@@ -411,23 +411,7 @@ const prepareCorrelationData = () => {
 
   const timelineData = prepareTimelineData()
   const { heatmapData,  xLabels, yLabels } = prepareHeatmapData()
-const prepareMoodData = () => {
-  const moodRanges = [
-    { range: '1', min: 1, max: 1, color: '#ef4444', label: 'Very Low' },
-    { range: '2', min: 2, max: 2, color: '#f97316', label: 'Low' },
-    { range: '3', min: 3, max: 3, color: '#eab308', label: 'Moderate' },
-    { range: '4', min: 4, max: 4, color: '#22c55e', label: 'High' },
-    { range: '5', min: 5, max: 5, color: '#10b981', label: 'Very High' }
-  ]
 
-  return moodRanges.map(range => ({
-    ...range,
-    count: data.filter(d => 
-      d.subjectivemood != null && 
-      Math.round(d.subjectivemood) === range.min
-    ).length
-  }))
-}
   const correlationData = prepareCorrelationData()
 
   const chartOptions = [
