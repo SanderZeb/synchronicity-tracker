@@ -81,7 +81,11 @@ export const getValueTextColor = (value: number | undefined, max: number = 5): s
 export const calculateStreak = (data: SynchroData[], field: keyof SynchroData, threshold: number = 3): number => {
   const sortedData = data
     .filter(d => d.date && d[field] != null)
-    .sort((a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime())
+    .sort((a, b) => {
+      const dateA = a.date ? new Date(a.date).getTime() : 0
+      const dateB = b.date ? new Date(b.date).getTime() : 0
+      return dateB - dateA
+    })
   
   let streak = 0
   for (const entry of sortedData) {
@@ -101,7 +105,11 @@ export const calculateStreak = (data: SynchroData[], field: keyof SynchroData, t
 export const calculateTrend = (data: SynchroData[], field: keyof SynchroData, daysRecent: number = 7): number => {
   const sortedData = data
     .filter(d => d.date && d[field] != null)
-    .sort((a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime())
+    .sort((a, b) => {
+      const dateA = a.date ? new Date(a.date).getTime() : 0
+      const dateB = b.date ? new Date(b.date).getTime() : 0
+      return dateB - dateA
+    })
   
   const recent = sortedData.slice(0, daysRecent)
   const previous = sortedData.slice(daysRecent, daysRecent * 2)
@@ -159,18 +167,26 @@ export const aggregateDataByWeeks = (data: SynchroData[]) => {
   const weeklyData = new Map<string, { sum: number; count: number }>()
   
   data.filter(d => d.date && d.subjectivesynchro != null).forEach(d => {
-    const date = new Date(d.date!)
-    const weekStart = startOfWeek(date, { weekStartsOn: 1 })
-    const weekKey = format(weekStart, 'yyyy-MM-dd')
+    if (!d.date) return // Extra safety check
     
-    if (!weeklyData.has(weekKey)) {
-      weeklyData.set(weekKey, { sum: 0, count: 0 })
-    }
-    
-    const weekData = weeklyData.get(weekKey)
-    if (weekData) {
-      weekData.sum += d.subjectivesynchro || 0
-      weekData.count++
+    try {
+      const date = new Date(d.date)
+      if (isNaN(date.getTime())) return // Skip invalid dates
+      
+      const weekStart = startOfWeek(date, { weekStartsOn: 1 })
+      const weekKey = format(weekStart, 'yyyy-MM-dd')
+      
+      if (!weeklyData.has(weekKey)) {
+        weeklyData.set(weekKey, { sum: 0, count: 0 })
+      }
+      
+      const weekData = weeklyData.get(weekKey)
+      if (weekData) {
+        weekData.sum += d.subjectivesynchro || 0
+        weekData.count++
+      }
+    } catch (error) {
+      console.warn('Error processing date in aggregateDataByWeeks:', d.date, error)
     }
   })
   
@@ -185,17 +201,25 @@ export const aggregateDataByMonths = (data: SynchroData[]) => {
   const monthlyData = new Map<string, { sum: number; count: number }>()
   
   data.filter(d => d.date && d.subjectivesynchro != null).forEach(d => {
-    const date = new Date(d.date!)
-    const monthKey = format(startOfMonth(date), 'yyyy-MM')
+    if (!d.date) return // Extra safety check
     
-    if (!monthlyData.has(monthKey)) {
-      monthlyData.set(monthKey, { sum: 0, count: 0 })
-    }
-    
-    const monthData = monthlyData.get(monthKey)
-    if (monthData) {
-      monthData.sum += d.subjectivesynchro || 0
-      monthData.count++
+    try {
+      const date = new Date(d.date)
+      if (isNaN(date.getTime())) return // Skip invalid dates
+      
+      const monthKey = format(startOfMonth(date), 'yyyy-MM')
+      
+      if (!monthlyData.has(monthKey)) {
+        monthlyData.set(monthKey, { sum: 0, count: 0 })
+      }
+      
+      const monthData = monthlyData.get(monthKey)
+      if (monthData) {
+        monthData.sum += d.subjectivesynchro || 0
+        monthData.count++
+      }
+    } catch (error) {
+      console.warn('Error processing date in aggregateDataByMonths:', d.date, error)
     }
   })
   
@@ -210,17 +234,25 @@ export const aggregateDataByYears = (data: SynchroData[]) => {
   const yearlyData = new Map<string, { sum: number; count: number }>()
   
   data.filter(d => d.date && d.subjectivesynchro != null).forEach(d => {
-    const date = new Date(d.date!)
-    const yearKey = format(startOfYear(date), 'yyyy')
+    if (!d.date) return // Extra safety check
     
-    if (!yearlyData.has(yearKey)) {
-      yearlyData.set(yearKey, { sum: 0, count: 0 })
-    }
-    
-    const yearData = yearlyData.get(yearKey)
-    if (yearData) {
-      yearData.sum += d.subjectivesynchro || 0
-      yearData.count++
+    try {
+      const date = new Date(d.date)
+      if (isNaN(date.getTime())) return // Skip invalid dates
+      
+      const yearKey = format(startOfYear(date), 'yyyy')
+      
+      if (!yearlyData.has(yearKey)) {
+        yearlyData.set(yearKey, { sum: 0, count: 0 })
+      }
+      
+      const yearData = yearlyData.get(yearKey)
+      if (yearData) {
+        yearData.sum += d.subjectivesynchro || 0
+        yearData.count++
+      }
+    } catch (error) {
+      console.warn('Error processing date in aggregateDataByYears:', d.date, error)
     }
   })
   
@@ -563,34 +595,53 @@ export const formatDuration = (minutes: number): string => {
 /**
  * Get day of week from date string
  */
-export const getDayOfWeek = (dateStr: string): string => {
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-  const date = new Date(dateStr)
-  return days[date.getDay()]
+export const getDayOfWeek = (dateStr: string | undefined): string => {
+  if (!dateStr) return 'Unknown'
+  try {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return 'Unknown'
+    return days[date.getDay()] || 'Unknown'
+  } catch {
+    return 'Unknown'
+  }
 }
 
 /**
  * Check if date is weekend
  */
-export const isWeekend = (dateStr: string): boolean => {
-  const date = new Date(dateStr)
-  const day = date.getDay()
-  return day === 0 || day === 6 // Sunday or Saturday
+export const isWeekend = (dateStr: string | undefined): boolean => {
+  if (!dateStr) return false
+  try {
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return false
+    const day = date.getDay()
+    return day === 0 || day === 6 // Sunday or Saturday
+  } catch {
+    return false
+  }
 }
- 
+
 /**
  * Get relative time string
  */
-export const getRelativeTime = (dateStr: string): string => {
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
-  
-  if (diffInDays === 0) return 'Today'
-  if (diffInDays === 1) return 'Yesterday'
-  if (diffInDays < 7) return `${diffInDays} days ago`
-  if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`
-  return `${Math.floor(diffInDays / 30)} months ago`
+export const getRelativeTime = (dateStr: string | undefined): string => {
+  if (!dateStr) return 'Unknown'
+  try {
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return 'Invalid date'
+    
+    const now = new Date()
+    const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+    
+    if (diffInDays === 0) return 'Today'
+    if (diffInDays === 1) return 'Yesterday'
+    if (diffInDays < 7) return `${diffInDays} days ago`
+    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`
+    return `${Math.floor(diffInDays / 30)} months ago`
+  } catch {
+    return 'Invalid date'
+  }
 }
 
 /**
