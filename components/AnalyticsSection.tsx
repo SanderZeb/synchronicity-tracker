@@ -746,7 +746,7 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
                     name={metricOptions.find(m => m.value === correlationX)?.label || 'X Axis'}
                     tick={{ fontSize: 12, fill: '#4a5568' }}
                     domain={correlationX === 'sleepavg' ? [0, 'dataMax'] : [1, 5]}
-                    ticks={correlationX === 'sleepavg' ? undefined : [1, 2, 3, 4, 5]}
+                    {...(correlationX !== 'sleepavg' && { ticks: [1, 2, 3, 4, 5] })}
                   />
                   <YAxis 
                     type="number" 
@@ -754,7 +754,7 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
                     name={metricOptions.find(m => m.value === correlationY)?.label || 'Y Axis'}
                     tick={{ fontSize: 12, fill: '#4a5568' }}
                     domain={correlationY === 'sleepavg' ? [0, 'dataMax'] : [1, 5]}
-                    ticks={correlationY === 'sleepavg' ? undefined : [1, 2, 3, 4, 5]}
+                    {...(correlationY !== 'sleepavg' && { ticks: [1, 2, 3, 4, 5] })}
                   />
                   <Tooltip 
                     cursor={{ strokeDasharray: '3 3' }}
