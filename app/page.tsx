@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { SynchroData, fetchAllData, fetchAllDataPaginated} from '../lib/supabase'
 import { convertSleepToHours } from '../lib/utils'
-import { useAuth } from '../contexts/AuthContext'
 import AuthGuard from '../components/AuthGuard'
 import UserMenu from '../components/UserMenu'
 import AnalyticsSection from '../components/AnalyticsSection'
@@ -24,7 +23,6 @@ import {
 type TabType = 'overview' | 'analytics' | 'input' | 'data'
 
 export default function Dashboard() {
-  const { user } = useAuth()
   const [activeTab, setActiveTab] = useState<TabType>('overview')
   const [data, setData] = useState<SynchroData[]>([])
   const [loading, setLoading] = useState(true)
