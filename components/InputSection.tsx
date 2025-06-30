@@ -12,7 +12,6 @@ import {
   ScaleIcon,
   BeakerIcon,
   BoltIcon,
-  CpuChipIcon,
   SunIcon,
   CalendarIcon
 } from '@heroicons/react/24/outline'
