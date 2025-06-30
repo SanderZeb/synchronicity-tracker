@@ -14,9 +14,7 @@ import {
   Pie,
   Cell,
   Scatter,
-  ScatterChart,
-  BarChart,
-  Bar
+  ScatterChart
 } from 'recharts'
 import { format, parseISO, startOfWeek, startOfMonth, startOfYear, getDay } from 'date-fns'
 import { convertSleepToHours } from '../lib/utils'
