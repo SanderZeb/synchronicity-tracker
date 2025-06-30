@@ -22,7 +22,7 @@ export const formatDate = (dateStr: string | undefined, formatString: string = '
   if (!dateStr) return 'N/A'
   try {
     const date = parseISO(dateStr)
-    if (!isValid(date)) return dateStr
+    if (!isValid(date) || isNaN(date.getTime())) return dateStr
     return format(date, formatString)
   } catch {
     return dateStr
@@ -81,7 +81,13 @@ export const getValueTextColor = (value: number | undefined, max: number = 5): s
 export const calculateStreak = (data: SynchroData[], field: keyof SynchroData, threshold: number = 3): number => {
   const sortedData = data
     .filter(d => d.date && d[field] != null)
-    .sort((a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime())
+    .sort((a, b) => {
+      if (!a.date || !b.date) return 0
+      const dateA = new Date(a.date).getTime()
+      const dateB = new Date(b.date).getTime()
+      if (isNaN(dateA) || isNaN(dateB)) return 0
+      return dateB - dateA
+    })
   
   let streak = 0
   for (const entry of sortedData) {
@@ -101,7 +107,13 @@ export const calculateStreak = (data: SynchroData[], field: keyof SynchroData, t
 export const calculateTrend = (data: SynchroData[], field: keyof SynchroData, daysRecent: number = 7): number => {
   const sortedData = data
     .filter(d => d.date && d[field] != null)
-    .sort((a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime())
+    .sort((a, b) => {
+      if (!a.date || !b.date) return 0
+      const dateA = new Date(a.date).getTime()
+      const dateB = new Date(b.date).getTime()
+      if (isNaN(dateA) || isNaN(dateB)) return 0
+      return dateB - dateA
+    })
   
   const recent = sortedData.slice(0, daysRecent)
   const previous = sortedData.slice(daysRecent, daysRecent * 2)
@@ -159,18 +171,28 @@ export const aggregateDataByWeeks = (data: SynchroData[]) => {
   const weeklyData = new Map<string, { sum: number; count: number }>()
   
   data.filter(d => d.date && d.subjectivesynchro != null).forEach(d => {
-    const date = new Date(d.date!)
-    const weekStart = startOfWeek(date, { weekStartsOn: 1 })
-    const weekKey = format(weekStart, 'yyyy-MM-dd')
+    if (!d.date) return // Extra safety check
     
-    if (!weeklyData.has(weekKey)) {
-      weeklyData.set(weekKey, { sum: 0, count: 0 })
-    }
-    
-    const weekData = weeklyData.get(weekKey)
-    if (weekData) {
-      weekData.sum += d.subjectivesynchro || 0
-      weekData.count++
+    try {
+      const date = new Date(d.date)
+      if (isNaN(date.getTime())) return // Skip invalid dates
+      
+      const weekStart = startOfWeek(date, { weekStartsOn: 1 })
+      if (!weekStart || isNaN(weekStart.getTime())) return // Validate weekStart
+      
+      const weekKey = format(weekStart, 'yyyy-MM-dd')
+      
+      if (!weeklyData.has(weekKey)) {
+        weeklyData.set(weekKey, { sum: 0, count: 0 })
+      }
+      
+      const weekData = weeklyData.get(weekKey)
+      if (weekData) {
+        weekData.sum += d.subjectivesynchro || 0
+        weekData.count++
+      }
+    } catch (error) {
+      console.warn('Error processing date in aggregateDataByWeeks:', d.date, error)
     }
   })
   
@@ -185,17 +207,28 @@ export const aggregateDataByMonths = (data: SynchroData[]) => {
   const monthlyData = new Map<string, { sum: number; count: number }>()
   
   data.filter(d => d.date && d.subjectivesynchro != null).forEach(d => {
-    const date = new Date(d.date!)
-    const monthKey = format(startOfMonth(date), 'yyyy-MM')
+    if (!d.date) return // Extra safety check
     
-    if (!monthlyData.has(monthKey)) {
-      monthlyData.set(monthKey, { sum: 0, count: 0 })
-    }
-    
-    const monthData = monthlyData.get(monthKey)
-    if (monthData) {
-      monthData.sum += d.subjectivesynchro || 0
-      monthData.count++
+    try {
+      const date = new Date(d.date)
+      if (isNaN(date.getTime())) return // Skip invalid dates
+      
+      const monthStart = startOfMonth(date)
+      if (!monthStart || isNaN(monthStart.getTime())) return // Validate monthStart
+      
+      const monthKey = format(monthStart, 'yyyy-MM')
+      
+      if (!monthlyData.has(monthKey)) {
+        monthlyData.set(monthKey, { sum: 0, count: 0 })
+      }
+      
+      const monthData = monthlyData.get(monthKey)
+      if (monthData) {
+        monthData.sum += d.subjectivesynchro || 0
+        monthData.count++
+      }
+    } catch (error) {
+      console.warn('Error processing date in aggregateDataByMonths:', d.date, error)
     }
   })
   
@@ -210,17 +243,28 @@ export const aggregateDataByYears = (data: SynchroData[]) => {
   const yearlyData = new Map<string, { sum: number; count: number }>()
   
   data.filter(d => d.date && d.subjectivesynchro != null).forEach(d => {
-    const date = new Date(d.date!)
-    const yearKey = format(startOfYear(date), 'yyyy')
+    if (!d.date) return // Extra safety check
     
-    if (!yearlyData.has(yearKey)) {
-      yearlyData.set(yearKey, { sum: 0, count: 0 })
-    }
-    
-    const yearData = yearlyData.get(yearKey)
-    if (yearData) {
-      yearData.sum += d.subjectivesynchro || 0
-      yearData.count++
+    try {
+      const date = new Date(d.date)
+      if (isNaN(date.getTime())) return // Skip invalid dates
+      
+      const yearStart = startOfYear(date)
+      if (!yearStart || isNaN(yearStart.getTime())) return // Validate yearStart
+      
+      const yearKey = format(yearStart, 'yyyy')
+      
+      if (!yearlyData.has(yearKey)) {
+        yearlyData.set(yearKey, { sum: 0, count: 0 })
+      }
+      
+      const yearData = yearlyData.get(yearKey)
+      if (yearData) {
+        yearData.sum += d.subjectivesynchro || 0
+        yearData.count++
+      }
+    } catch (error) {
+      console.warn('Error processing date in aggregateDataByYears:', d.date, error)
     }
   })
   
@@ -501,7 +545,7 @@ export const debounce = <T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): ((...args: Parameters<T>) => void) => {
-  let timeout: NodeJS.Timeout
+  let timeout: ReturnType<typeof setTimeout>
   return (...args: Parameters<T>) => {
     clearTimeout(timeout)
     timeout = setTimeout(() => func(...args), wait)
@@ -512,7 +556,7 @@ export const debounce = <T extends (...args: any[]) => any>(
  * Generate random ID for temporary use
  */
 export const generateId = (): string => {
-  return Math.random().toString(36).substr(2, 9)
+  return Math.random().toString(36).slice(2, 11)
 }
 
 /**
@@ -540,7 +584,13 @@ export const getPercentage = (value: number, min: number, max: number): number =
  * Get time of day category
  */
 export const getTimeCategory = (time: string): string => {
-  const hour = parseInt(time.split(':')[0])
+  if (!time || typeof time !== 'string') return 'Unknown'
+  
+  const timeParts = time.split(':')
+  if (timeParts.length === 0 || !timeParts[0]) return 'Unknown'
+  
+  const hour = parseInt(timeParts[0], 10)
+  if (isNaN(hour)) return 'Unknown'
   
   if (hour >= 6 && hour < 12) return 'Morning'
   if (hour >= 12 && hour < 17) return 'Afternoon'
@@ -563,34 +613,53 @@ export const formatDuration = (minutes: number): string => {
 /**
  * Get day of week from date string
  */
-export const getDayOfWeek = (dateStr: string): string => {
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-  const date = new Date(dateStr)
-  return days[date.getDay()]
+export const getDayOfWeek = (dateStr: string | undefined): string => {
+  if (!dateStr) return 'Unknown'
+  try {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return 'Unknown'
+    return days[date.getDay()] || 'Unknown'
+  } catch {
+    return 'Unknown'
+  }
 }
 
 /**
  * Check if date is weekend
  */
-export const isWeekend = (dateStr: string): boolean => {
-  const date = new Date(dateStr)
-  const day = date.getDay()
-  return day === 0 || day === 6 // Sunday or Saturday
+export const isWeekend = (dateStr: string | undefined): boolean => {
+  if (!dateStr) return false
+  try {
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return false
+    const day = date.getDay()
+    return day === 0 || day === 6 // Sunday or Saturday
+  } catch {
+    return false
+  }
 }
 
 /**
  * Get relative time string
  */
-export const getRelativeTime = (dateStr: string): string => {
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
-  
-  if (diffInDays === 0) return 'Today'
-  if (diffInDays === 1) return 'Yesterday'
-  if (diffInDays < 7) return `${diffInDays} days ago`
-  if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`
-  return `${Math.floor(diffInDays / 30)} months ago`
+export const getRelativeTime = (dateStr: string | undefined): string => {
+  if (!dateStr) return 'Unknown'
+  try {
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return 'Invalid date'
+    
+    const now = new Date()
+    const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+    
+    if (diffInDays === 0) return 'Today'
+    if (diffInDays === 1) return 'Yesterday'
+    if (diffInDays < 7) return `${diffInDays} days ago`
+    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`
+    return `${Math.floor(diffInDays / 30)} months ago`
+  } catch {
+    return 'Invalid date'
+  }
 }
 
 /**
