@@ -15,6 +15,19 @@ export default function AuthGuard({ children, fallback }: AuthGuardProps) {
   const { user, loading } = useAuth()
   const [showAuthModal, setShowAuthModal] = useState(false)
 
+  // Add this debug function
+  const handleShowAuth = () => {
+    console.log('🚀 onShowAuth called - should open modal')
+    console.log('Current showAuthModal state:', showAuthModal)
+    setShowAuthModal(true)
+    console.log('setShowAuthModal(true) called')
+  }
+
+  // Add this useEffect to monitor state changes
+  useEffect(() => {
+    console.log('🔄 showAuthModal state changed to:', showAuthModal)
+  }, [showAuthModal])
+
   // Show loading state while checking authentication
   if (loading) {
     return (
@@ -33,16 +46,22 @@ export default function AuthGuard({ children, fallback }: AuthGuardProps) {
   if (!user) {
     return (
       <>
-        {fallback || <LoginPrompt onShowAuth={() => setShowAuthModal(true)} />}
+        {fallback || <LoginPrompt onShowAuth={handleShowAuth} />}
+        {/* Add debug info */}
+        <div style={{position: 'fixed', top: 0, right: 0, background: 'black', color: 'white', padding: '10px', zIndex: 9999}}>
+          Modal State: {showAuthModal ? 'TRUE' : 'FALSE'}
+        </div>
         <AuthModal 
           isOpen={showAuthModal} 
-          onClose={() => setShowAuthModal(false)} 
+          onClose={() => {
+            console.log('🔒 Closing modal')
+            setShowAuthModal(false)
+          }} 
         />
       </>
     )
   }
 
-  // User is authenticated, render the protected content
   return <>{children}</>
 }
 
