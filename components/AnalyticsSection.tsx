@@ -92,58 +92,59 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
     }
   }
 
-  const prepareWeeklyHeatmap = (filteredData: SynchroData[]) => {
-    const weeklyData = new Map<string, number[]>()
-    const weeklyCounts = new Map<string, number>()
+ const prepareWeeklyHeatmap = (filteredData: SynchroData[]) => {
+  const weeklyData = new Map<string, number[]>()
+  const weeklyCounts = new Map<string, number>()
+  
+  filteredData.forEach(d => {
+    const date = new Date(d.date!)
+    const weekStart = startOfWeek(date, { weekStartsOn: 1 })
+    const weekKey = format(weekStart, 'yyyy-MM-dd')
+    const dayOfWeek = getDay(date) === 0 ? 6 : getDay(date) - 1
     
-    filteredData.forEach(d => {
-      const date = new Date(d.date!)
-      const weekStart = startOfWeek(date, { weekStartsOn: 1 }) // Monday start
-      const weekKey = format(weekStart, 'yyyy-MM-dd')
-      const dayOfWeek = getDay(date) === 0 ? 6 : getDay(date) - 1 // Monday = 0, Sunday = 6
-      
-      if (!weeklyData.has(weekKey)) {
-        weeklyData.set(weekKey, new Array(7).fill(0))
-        weeklyCounts.set(weekKey, 0)
-      }
-      
-      const weekValues = weeklyData.get(weekKey)
-      const count = weeklyCounts.get(weekKey)
-      
-      // FIXED: Add proper type safety checks
-      if (weekValues && dayOfWeek >= 0 && dayOfWeek < 7 && weekValues[dayOfWeek] !== undefined && count !== undefined) {
-        weekValues[dayOfWeek] += d.subjectivesynchro || 0
-        weeklyCounts.set(weekKey, count + 1)
-      }
-    })
-
-    const heatmapData: any[] = []
-    const weeks = Array.from(weeklyData.keys()).sort().slice(-12) // Last 12 weeks
-    const maxValue = Math.max(...Array.from(weeklyData.values()).flat().filter(v => v > 0))
-    
-    weeks.forEach((weekKey, weekIndex) => {
-      const weekValues = weeklyData.get(weekKey)
-      if (weekValues) {
-        weekValues.forEach((value, dayIndex) => {
-          const intensity = maxValue > 0 ? (value / maxValue) : 0
-          heatmapData.push({
-            x: dayIndex,
-            y: weekIndex,
-            value,
-            intensity,
-            label: `Week ${format(parseISO(weekKey), 'MMM dd')}, ${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][dayIndex]}`
-          })
-        })
-      }
-    })
-
-    return { 
-      heatmapData, 
-      maxValue, 
-      xLabels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-      yLabels: weeks.map(w => format(parseISO(w), 'MMM dd'))
+    if (!weeklyData.has(weekKey)) {
+      weeklyData.set(weekKey, new Array(7).fill(0))
+      weeklyCounts.set(weekKey, 0)
     }
+    
+    const weekValues = weeklyData.get(weekKey)
+    const count = weeklyCounts.get(weekKey)
+    
+    if (weekValues && dayOfWeek >= 0 && dayOfWeek < 7 && weekValues[dayOfWeek] !== undefined && count !== undefined) {
+      // Use integer values
+      weekValues[dayOfWeek] += Math.round(d.subjectivesynchro || 0)
+      weeklyCounts.set(weekKey, count + 1)
+    }
+  })
+
+  const heatmapData: any[] = []
+  const weeks = Array.from(weeklyData.keys()).sort().slice(-12)
+  const maxValue = Math.max(...Array.from(weeklyData.values()).flat().filter(v => v > 0))
+  
+  weeks.forEach((weekKey, weekIndex) => {
+    const weekValues = weeklyData.get(weekKey)
+    if (weekValues) {
+      weekValues.forEach((value, dayIndex) => {
+        const intensity = maxValue > 0 ? (value / maxValue) : 0
+        heatmapData.push({
+          x: dayIndex,
+          y: weekIndex,
+          value: Math.round(value), // Ensure integer display
+          intensity,
+          label: `Week ${format(parseISO(weekKey), 'MMM dd')}, ${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][dayIndex]}`
+        })
+      })
+    }
+  })
+
+  return { 
+    heatmapData, 
+    maxValue, 
+    xLabels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    yLabels: weeks.map(w => format(parseISO(w), 'MMM dd'))
   }
+}
+
 
   const prepareMonthlyHeatmap = (filteredData: SynchroData[]) => {
     const monthlyData = new Map<string, number>()
@@ -393,24 +394,40 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
   }
 
   // Process correlation data with selectable variables
-  const prepareCorrelationData = () => {
-    return data
-      .filter(d => d[correlationX] != null && d[correlationY] != null)
-      .map(d => {
-        const xValue = correlationX === 'sleepavg' ? convertSleepToHours(d[correlationX]) : d[correlationX]
-        const yValue = correlationY === 'sleepavg' ? convertSleepToHours(d[correlationY]) : d[correlationY]
-        
-        return {
-          x: xValue || 0,
-          y: yValue || 0,
-          date: d.date
-        }
-      })
-  }
+const prepareCorrelationData = () => {
+  return data
+    .filter(d => d[correlationX] != null && d[correlationY] != null)
+    .map(d => {
+      const xValue = correlationX === 'sleepavg' ? convertSleepToHours(d[correlationX]) : Math.round(d[correlationX] || 0)
+      const yValue = correlationY === 'sleepavg' ? convertSleepToHours(d[correlationY]) : Math.round(d[correlationY] || 0)
+      
+      return {
+        x: xValue,
+        y: yValue,
+        date: d.date
+      }
+    })
+}
 
   const timelineData = prepareTimelineData()
   const { heatmapData,  xLabels, yLabels } = prepareHeatmapData()
-  const moodData = prepareMoodData()
+const prepareMoodData = () => {
+  const moodRanges = [
+    { range: '1', min: 1, max: 1, color: '#ef4444', label: 'Very Low' },
+    { range: '2', min: 2, max: 2, color: '#f97316', label: 'Low' },
+    { range: '3', min: 3, max: 3, color: '#eab308', label: 'Moderate' },
+    { range: '4', min: 4, max: 4, color: '#22c55e', label: 'High' },
+    { range: '5', min: 5, max: 5, color: '#10b981', label: 'Very High' }
+  ]
+
+  return moodRanges.map(range => ({
+    ...range,
+    count: data.filter(d => 
+      d.subjectivemood != null && 
+      Math.round(d.subjectivemood) === range.min
+    ).length
+  }))
+}
   const correlationData = prepareCorrelationData()
 
   const chartOptions = [
@@ -643,22 +660,23 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
                     tick={{ fontSize: 12, fill: '#4a5568' }}
                   />
                   <YAxis 
-                    tick={{ fontSize: 12, fill: '#4a5568' }}
-                    domain={[0, 'dataMax']}
-                  />
-                  <Tooltip 
-                    labelFormatter={(value) => formatDate(value as string)}
-                    formatter={(value, name) => [
-                      name === 'sleepavg' ? `${Number(value).toFixed(1)}h` : Number(value).toFixed(1),
-                      metricOptions.find(m => m.value === name)?.label || name
-                    ]}
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                    }}
-                  />
+  tick={{ fontSize: 12, fill: '#4a5568' }}
+  domain={[1, 5]} // Fixed domain for 1-5 scale
+  ticks={[1, 2, 3, 4, 5]} // Show all integer ticks
+/>
+<Tooltip 
+  labelFormatter={(value) => formatDate(value as string)}
+  formatter={(value, name) => [
+    name === 'sleepavg' ? `${Number(value).toFixed(1)}h` : Math.round(Number(value)).toString(),
+    metricOptions.find(m => m.value === name)?.label || name
+  ]}
+  contentStyle={{
+    backgroundColor: 'white',
+    border: '1px solid #e2e8f0',
+    borderRadius: '8px',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+  }}
+/>
                   {timelineMetrics.map(metric => {
                     const metricConfig = metricOptions.find(m => m.value === metric)
                     return (
@@ -752,33 +770,40 @@ export default function AnalyticsSection({ data }: AnalyticsSectionProps) {
                 <ScatterChart data={correlationData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f4f7" />
                   <XAxis 
-                    type="number" 
-                    dataKey="x" 
-                    name={metricOptions.find(m => m.value === correlationX)?.label || 'X Axis'}
-                    tick={{ fontSize: 12, fill: '#4a5568' }}
-                    domain={[0, 'dataMax']}
-                  />
-                  <YAxis 
-                    type="number" 
-                    dataKey="y" 
-                    name={metricOptions.find(m => m.value === correlationY)?.label || 'Y Axis'}
-                    tick={{ fontSize: 12, fill: '#4a5568' }}
-                    domain={[0, 'dataMax']}
-                  />
-                  <Tooltip 
-                    cursor={{ strokeDasharray: '3 3' }}
-                    formatter={(value, name) => [
-                      Number(value).toFixed(1), 
-                      name === 'x' ? metricOptions.find(m => m.value === correlationX)?.label || 'X Axis' : 
-                      metricOptions.find(m => m.value === correlationY)?.label || 'Y Axis'
-                    ]}
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                    }}
-                  />
+  type="number" 
+  dataKey="x" 
+  name={metricOptions.find(m => m.value === correlationX)?.label || 'X Axis'}
+  tick={{ fontSize: 12, fill: '#4a5568' }}
+  domain={correlationX === 'sleepavg' ? [0, 'dataMax'] : [1, 5]}
+  ticks={correlationX === 'sleepavg' ? undefined : [1, 2, 3, 4, 5]}
+/>
+<YAxis 
+  type="number" 
+  dataKey="y" 
+  name={metricOptions.find(m => m.value === correlationY)?.label || 'Y Axis'}
+  tick={{ fontSize: 12, fill: '#4a5568' }}
+  domain={correlationY === 'sleepavg' ? [0, 'dataMax'] : [1, 5]}
+  ticks={correlationY === 'sleepavg' ? undefined : [1, 2, 3, 4, 5]}
+/>
+
+// Update scatter chart tooltip:
+<Tooltip 
+  cursor={{ strokeDasharray: '3 3' }}
+  formatter={(value, name) => [
+    name === 'x' ? 
+      (correlationX === 'sleepavg' ? Number(value).toFixed(1) : Math.round(Number(value)).toString()) :
+      (correlationY === 'sleepavg' ? Number(value).toFixed(1) : Math.round(Number(value)).toString()),
+    name === 'x' ? 
+      metricOptions.find(m => m.value === correlationX)?.label || 'X Axis' : 
+      metricOptions.find(m => m.value === correlationY)?.label || 'Y Axis'
+  ]}
+  contentStyle={{
+    backgroundColor: 'white',
+    border: '1px solid #e2e8f0',
+    borderRadius: '8px',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+  }}
+/>
                   <Scatter name="Data Points" fill="#3399e6" />
                 </ScatterChart>
               </ResponsiveContainer>

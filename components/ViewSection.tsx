@@ -187,80 +187,83 @@ export default function ViewSection({ data }: ViewSectionProps) {
   )
 
   const EntryCard = ({ entry }: { entry: SynchroData }) => (
-    <div className="card-interactive group overflow-hidden">
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <CalendarIcon className="h-5 w-5 text-text-muted" />
-            <span className="font-semibold text-text-primary">{formatDateDisplay(entry.date)}</span>
+  <div className="card-interactive group overflow-hidden">
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center space-x-3">
+          <CalendarIcon className="h-5 w-5 text-text-muted" />
+          <span className="font-semibold text-text-primary">{formatDateDisplay(entry.date)}</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            checked={selectedEntries.has(entry.id!)}
+            onChange={() => toggleSelectEntry(entry.id!)}
+            className="rounded text-primary-600 focus:ring-primary-500 focus:ring-2"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="text-center p-4 bg-gradient-to-br from-primary-50 to-primary-100 rounded-xl border border-primary-200">
+          <BoltIcon className="h-5 w-5 text-primary-600 mx-auto mb-2" />
+          <div className={`text-xl font-bold ${getValueColor(entry.subjectivesynchro, 5)}`}>
+            {/* Updated to show integer */}
+            {entry.subjectivesynchro ? Math.round(entry.subjectivesynchro) : 'N/A'}
           </div>
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={selectedEntries.has(entry.id!)}
-              onChange={() => toggleSelectEntry(entry.id!)}
-              className="rounded text-primary-600 focus:ring-primary-500 focus:ring-2"
-            />
+          <div className="text-xs text-text-muted">Synchronicity</div>
+          <div className="text-xs text-primary-600 font-medium mt-1">
+            {entry.subjectivesynchro ? getScaleDescription(Math.round(entry.subjectivesynchro)) : ''}
           </div>
         </div>
-
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="text-center p-4 bg-gradient-to-br from-primary-50 to-primary-100 rounded-xl border border-primary-200">
-            <BoltIcon className="h-5 w-5 text-primary-600 mx-auto mb-2" />
-            <div className={`text-xl font-bold ${getValueColor(entry.subjectivesynchro, 5)}`}>
-              {entry.subjectivesynchro?.toFixed(1) || 'N/A'}
-            </div>
-            <div className="text-xs text-text-muted">Synchronicity</div>
-            <div className="text-xs text-primary-600 font-medium mt-1">
-              {entry.subjectivesynchro ? getScaleDescription(entry.subjectivesynchro) : ''}
-            </div>
+        
+        <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200">
+          <HeartIcon className="h-5 w-5 text-green-600 mx-auto mb-2" />
+          <div className={`text-xl font-bold ${getValueColor(entry.subjectivemood, 5)}`}>
+            {/* Updated to show integer */}
+            {entry.subjectivemood ? Math.round(entry.subjectivemood) : 'N/A'}
           </div>
-          
-          <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200">
-            <HeartIcon className="h-5 w-5 text-green-600 mx-auto mb-2" />
-            <div className={`text-xl font-bold ${getValueColor(entry.subjectivemood, 5)}`}>
-              {entry.subjectivemood?.toFixed(1) || 'N/A'}
-            </div>
-            <div className="text-xs text-text-muted">Mood</div>
-            <div className="text-xs text-green-600 font-medium mt-1">
-              {entry.subjectivemood ? getScaleDescription(entry.subjectivemood) : ''}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="text-center p-3 bg-gradient-to-br from-accent-50 to-accent-100 rounded-lg border border-accent-200">
-            <SunIcon className="h-4 w-4 text-accent-600 mx-auto mb-1" />
-            <div className={`text-lg font-bold ${getValueColor(entry.productivity, 5)}`}>
-              {entry.productivity?.toFixed(1) || 'N/A'}
-            </div>
-            <div className="text-xs text-text-muted">Productivity</div>
-          </div>
-          
-          <div className="text-center p-3 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
-            <MoonIcon className="h-4 w-4 text-purple-600 mx-auto mb-1" />
-            <div className="text-lg font-bold text-purple-600">
-              {entry.sleepavg ? `${convertSleepToHours(entry.sleepavg).toFixed(1)}h` : 'N/A'}
-            </div>
-            <div className="text-xs text-text-muted">Sleep</div>
-          </div>
-        </div>
-
-        <div className="flex justify-between items-center text-sm">
-          <div className="flex items-center space-x-2">
-            <span className="badge badge-primary flex items-center space-x-1">
-              <FireIcon className="h-3 w-3" />
-              <span>{entry.synchrosum || 0} events</span>
-            </span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <ClockIcon className="h-4 w-4 text-text-muted" />
-            <span className="text-text-secondary">{entry.day_of_the_week || 'N/A'}</span>
+          <div className="text-xs text-text-muted">Mood</div>
+          <div className="text-xs text-green-600 font-medium mt-1">
+            {entry.subjectivemood ? getScaleDescription(Math.round(entry.subjectivemood)) : ''}
           </div>
         </div>
       </div>
+
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="text-center p-3 bg-gradient-to-br from-accent-50 to-accent-100 rounded-lg border border-accent-200">
+          <SunIcon className="h-4 w-4 text-accent-600 mx-auto mb-1" />
+          <div className={`text-lg font-bold ${getValueColor(entry.productivity, 5)}`}>
+            {/* Updated to show integer */}
+            {entry.productivity ? Math.round(entry.productivity) : 'N/A'}
+          </div>
+          <div className="text-xs text-text-muted">Productivity</div>
+        </div>
+        
+        <div className="text-center p-3 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+          <MoonIcon className="h-4 w-4 text-purple-600 mx-auto mb-1" />
+          <div className="text-lg font-bold text-purple-600">
+            {entry.sleepavg ? `${convertSleepToHours(entry.sleepavg).toFixed(1)}h` : 'N/A'}
+          </div>
+          <div className="text-xs text-text-muted">Sleep</div>
+        </div>
+      </div>
+
+      <div className="flex justify-between items-center text-sm">
+        <div className="flex items-center space-x-2">
+          <span className="badge badge-primary flex items-center space-x-1">
+            <FireIcon className="h-3 w-3" />
+            <span>{entry.synchrosum || 0} events</span>
+          </span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <ClockIcon className="h-4 w-4 text-text-muted" />
+          <span className="text-text-secondary">{entry.day_of_the_week || 'N/A'}</span>
+        </div>
+      </div>
     </div>
-  )
+  </div>
+)
 
   return (
     <div className="space-y-8">
@@ -518,32 +521,37 @@ export default function ViewSection({ data }: ViewSectionProps) {
                       {entry.day_of_the_week || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <div className="flex items-center space-x-2">
-                        <div className={`w-3 h-3 rounded-full ${getStatusColor(entry.subjectivesynchro, 'dot')}`} />
-                        <span className={`font-medium ${getValueColor(entry.subjectivesynchro, 5)}`}>
-                          {entry.subjectivesynchro?.toFixed(1) || 'N/A'}
-                        </span>
-                        <span className="text-xs text-text-muted">
-                          {entry.subjectivesynchro ? `(${getScaleDescription(entry.subjectivesynchro)})` : ''}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <div className="flex items-center space-x-2">
-                        <div className={`w-3 h-3 rounded-full ${getStatusColor(entry.subjectivemood, 'dot')}`} />
-                        <span className={`font-medium ${getValueColor(entry.subjectivemood, 5)}`}>
-                          {entry.subjectivemood?.toFixed(1) || 'N/A'}
-                        </span>
-                        <span className="text-xs text-text-muted">
-                          {entry.subjectivemood ? `(${getScaleDescription(entry.subjectivemood)})` : ''}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={`font-medium ${getValueColor(entry.productivity, 5)}`}>
-                        {entry.productivity?.toFixed(1) || 'N/A'}
-                      </span>
-                    </td>
+  <div className="flex items-center space-x-2">
+    <div className={`w-3 h-3 rounded-full ${getStatusColor(entry.subjectivesynchro, 'dot')}`} />
+    <span className={`font-medium ${getValueColor(entry.subjectivesynchro, 5)}`}>
+      {/* Updated to show integer */}
+      {entry.subjectivesynchro ? Math.round(entry.subjectivesynchro) : 'N/A'}
+    </span>
+    <span className="text-xs text-text-muted">
+      {entry.subjectivesynchro ? `(${getScaleDescription(Math.round(entry.subjectivesynchro))})` : ''}
+    </span>
+  </div>
+</td>
+
+<td className="px-6 py-4 whitespace-nowrap text-sm">
+  <div className="flex items-center space-x-2">
+    <div className={`w-3 h-3 rounded-full ${getStatusColor(entry.subjectivemood, 'dot')}`} />
+    <span className={`font-medium ${getValueColor(entry.subjectivemood, 5)}`}>
+      {/* Updated to show integer */}
+      {entry.subjectivemood ? Math.round(entry.subjectivemood) : 'N/A'}
+    </span>
+    <span className="text-xs text-text-muted">
+      {entry.subjectivemood ? `(${getScaleDescription(Math.round(entry.subjectivemood))})` : ''}
+    </span>
+  </div>
+</td>
+
+<td className="px-6 py-4 whitespace-nowrap text-sm">
+  <span className={`font-medium ${getValueColor(entry.productivity, 5)}`}>
+    {/* Updated to show integer */}
+    {entry.productivity ? Math.round(entry.productivity) : 'N/A'}
+  </span>
+</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary font-semibold">
                       <span className="badge badge-accent">
                         {entry.synchrosum || 0}
