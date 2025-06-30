@@ -2,6 +2,7 @@ import './globals.css'
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import ErrorBoundary from '../components/ErrorBoundary'
+import { AuthProvider } from '../contexts/AuthContext'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -99,26 +100,28 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.className} antialiased`}>
-        <ErrorBoundary>
-          {/* Skip to main content for accessibility */}
-          <a 
-            href="#main-content" 
-            className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary-600 text-white px-4 py-2 rounded-lg z-50"
-          >
-            Skip to main content
-          </a>
-          
-          {/* Main application wrapper */}
-          <div className="min-h-screen bg-background">
-            {/* Main content */}
-            <main id="main-content" className="relative">
-              {children}
-            </main>
+        <AuthProvider>
+          <ErrorBoundary>
+            {/* Skip to main content for accessibility */}
+            <a 
+              href="#main-content" 
+              className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary-600 text-white px-4 py-2 rounded-lg z-50"
+            >
+              Skip to main content
+            </a>
             
-            {/* Accessibility improvements */}
-            <div className="sr-only" role="status" aria-live="polite" id="status-announcements" />
-          </div>
-        </ErrorBoundary>
+            {/* Main application wrapper */}
+            <div className="min-h-screen bg-background">
+              {/* Main content */}
+              <main id="main-content" className="relative">
+                {children}
+              </main>
+              
+              {/* Accessibility improvements */}
+              <div className="sr-only" role="status" aria-live="polite" id="status-announcements" />
+            </div>
+          </ErrorBoundary>
+        </AuthProvider>
         
         {/* Performance monitoring script */}
         {process.env.NODE_ENV === 'production' && (
