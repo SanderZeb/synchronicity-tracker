@@ -50,7 +50,7 @@ export const calculateAverage = (data: SynchroData[], field: keyof SynchroData):
 /**
  * Get color class based on intensity/value for integer 1-5 scale
  */
-export const getIntensityColor = (value: number | undefined, max: number = 5): string => {
+export const getIntensityColor = (value: number | undefined): string => {
   if (!value) return 'bg-gray-100 text-text-muted'
   
   if (value === 5) return 'bg-green-600 text-white'
@@ -64,7 +64,7 @@ export const getIntensityColor = (value: number | undefined, max: number = 5): s
 /**
  * Get text color class based on value for integer 1-5 scale
  */
-export const getValueTextColor = (value: number | undefined, max: number = 5): string => {
+export const getValueTextColor = (value: number | undefined): string => {
   if (!value) return 'text-text-muted'
   
   if (value === 5) return 'text-green-600'
