@@ -361,7 +361,7 @@ export const calculateSynchroSum = (data: Partial<SynchroData>): number => {
  * Get insight text based on integer value (updated for 1-5 scale)
  */
 export const getInsightText = (value: number, type: 'synchronicity' | 'mood' | 'productivity'): string => {
-  let level: string
+  let level: 'excellent' | 'good' | 'moderate' | 'low' | 'very low'
   
   if (value === 5) level = 'excellent'
   else if (value === 4) level = 'good'
@@ -402,7 +402,7 @@ export const getInsightText = (value: number, type: 'synchronicity' | 'mood' | '
 export const getStatusColor = (value: number | undefined, type: 'dot' | 'text' | 'bg' = 'dot'): string => {
   if (value == null) return type === 'dot' ? 'bg-gray-300' : type === 'text' ? 'text-text-muted' : 'bg-gray-100'
   
-  let level: string
+  let level: 'excellent' | 'high' | 'medium' | 'low' | 'critical'
   if (value === 5) level = 'excellent'
   else if (value === 4) level = 'high'
   else if (value === 3) level = 'medium'
