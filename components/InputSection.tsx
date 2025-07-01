@@ -26,23 +26,30 @@ interface ValidationErrors {
 
 export default function InputSection({ onDataUpdate }: InputSectionProps) {
   const getCurrentDate = (): string => {
-    return new Date().toISOString().split('T')[0]
+    const date = new Date()
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
   }
 
-  const [formData, setFormData] = useState<Partial<SynchroData>>(() => ({
-    date: getCurrentDate(),
-    subjectivesynchro: 3,
-    subjectivemood: 3,
-    productivity: 3,
-    statehealth: 3,
-    staterelationship: 3,
-    stateselfesteem: 3,
-    stateinteligence: 3,
-    statesocialskill: 3,
-    stateimmerse: 3,
-    stres: 3,
-    sleepavg: 8
-  }))
+  const [formData, setFormData] = useState<Partial<SynchroData>>(() => {
+    const currentDate = getCurrentDate()
+    return {
+      date: currentDate,
+      subjectivesynchro: 3,
+      subjectivemood: 3,
+      productivity: 3,
+      statehealth: 3,
+      staterelationship: 3,
+      stateselfesteem: 3,
+      stateinteligence: 3,
+      statesocialskill: 3,
+      stateimmerse: 3,
+      stres: 3,
+      sleepavg: 8
+    }
+  })
   
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -124,8 +131,9 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
       
       setTimeout(() => {
         setSuccess(false)
+        const currentDate = getCurrentDate()
         setFormData({
-          date: getCurrentDate(),
+          date: currentDate,
           subjectivesynchro: 3,
           subjectivemood: 3,
           productivity: 3,
@@ -585,8 +593,9 @@ export default function InputSection({ onDataUpdate }: InputSectionProps) {
               <button
                 type="button"
                 onClick={() => {
+                  const currentDate = getCurrentDate()
                   setFormData({
-                    date: getCurrentDate(),
+                    date: currentDate,
                     subjectivesynchro: 3,
                     subjectivemood: 3,
                     productivity: 3,
